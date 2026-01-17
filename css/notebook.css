@@ -93,6 +93,11 @@ h3 {
 	font-weight: 600;
 }
 
+a[aria-disabled="true"] {	
+	opacity: 0.5;
+	cursor: default;
+}
+
 
 p {
 	color: var(--color-text-light);
