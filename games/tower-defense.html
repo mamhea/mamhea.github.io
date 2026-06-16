@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全名星塔房 - 導彈防衛與倍速版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #1a202c;
+            color: white;
+            user-select: none;
+            overflow: hidden;
+        }
+        #game-container {
+            image-rendering: pixelated;
+        }
+        canvas {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border-radius: 0.5rem;
+            max-width: 100%;
+            height: auto;
+            background-color: #4ade80;
+        }
+        .dialogue-box {
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 1rem;
+            text-shadow: 1px 1px 2px black;
+        }
+        ::-webkit-scrollbar { display: none; }
+        
+        #build-menu, #upgrade-menu {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex items-center justify-center relative">
+
+    <!-- 遊戲首頁 -->
+    <div id="home-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-50 transition-opacity duration-500">
+        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center max-w-lg border border-gray-700">
+            <h1 class="text-5xl font-black text-yellow-400 mb-4 drop-shadow-lg tracking-wider">全名星塔房</h1>
+            
+            <div class="bg-gray-700 p-5 rounded-xl mb-5 text-left border border-gray-600">
+                <h2 class="text-lg font-bold text-blue-300 mb-2 border-b border-gray-500 pb-1">遊戲玩法與單位介紹</h2>
+                <div class="text-gray-200 leading-relaxed text-sm mb-2 space-y-1">
+                    <p>在地圖上放上你的角色，阻止敵人進入我方基地。</p>
+                    <p><strong>⭐ 明星塔：</strong> <span class="text-yellow-400 font-bold">⚡極速射擊！</span>10倍射速機關槍。</p>
+                    <p><strong>🔥 爆發塔：</strong> 造成 <span class="text-red-400 font-bold">💥 範圍爆炸</span>，並附帶 <span class="text-orange-400 font-bold">🔥 燃燒 (DoT)</span>！</p>
+                    <p><strong>❄️ 冰霜塔：</strong> 造成 <span class="text-blue-300 font-bold">❄️ 範圍緩速</span>，限制敵人移動。</p>
+                    <p><strong>🚀 導彈塔：</strong> <span class="text-purple-400 font-bold">🆕 超遠射程、💥 範圍毀滅傷害</span>，但裝填時間長！</p>
+                    <p class="text-red-400 font-bold mt-2">⚠️ 一旦有一隻敵人進了基地，你就輸了！</p>
+                </div>
+                <div class="pt-2 border-t border-gray-500 text-xs text-gray-300">
+                    <p>🕹️ <strong>操作方式：</strong> WASD 移動遊標，空白鍵互動；也支援滑鼠直接點擊！</p>
+                </div>
+            </div>
+
+            <!-- 難度選擇區 -->
+            <div class="mb-6">
+                <label class="block text-gray-300 text-sm font-bold mb-3">🛡️ 選擇挑戰難度：</label>
+                <div class="flex justify-center gap-3">
+                    <button id="diff-easy" onclick="setDifficulty('easy')" class="px-4 py-2 rounded-xl border-2 border-green-500 bg-green-950/40 text-green-400 font-bold transition-all hover:bg-green-500/20">
+                        🟢 簡單
+                    </button>
+                    <button id="diff-normal" onclick="setDifficulty('normal')" class="px-4 py-2 rounded-xl border-2 border-yellow-500 bg-yellow-500 text-gray-900 font-bold transition-all">
+                        🟡 普通
+                    </button>
+                    <button id="diff-hard" onclick="setDifficulty('hard')" class="px-4 py-2 rounded-xl border-2 border-red-500 bg-red-950/40 text-red-400 font-bold transition-all hover:bg-red-500/20">
+                        🔴 困難
+                    </button>
+                </div>
+                <p id="diff-desc" class="text-xs text-gray-400 mt-2 h-4">起始金幣 $150，怪物血量正常 (100%)</p>
+            </div>
+
+            <div class="text-gray-400 mb-6 font-medium text-xs">
+                作者：<span class="text-white">陳品勳</span> &bull; 導彈範圍傷害版
+            </div>
+
+            <button id="btn-start" class="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white font-bold text-xl rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
+                開始遊戲
+            </button>
+        </div>
+    </div>
+
+    <!-- 遊戲區域 -->
+    <div id="game-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center w-full h-full bg-gray-900">
+        <!-- 頂部資訊列 -->
+        <div class="w-full max-w-[800px] flex justify-between items-end mb-2 px-2">
+            <div class="text-2xl font-bold text-white drop-shadow-md flex items-center gap-3">
+                <span>🌊 波數: <span id="ui-wave" class="text-blue-400">1</span></span>
+                <span id="ui-diff-tag" class="text-xs px-2 py-0.5 rounded-full font-bold">普通</span>
+            </div>
+            
+            <!-- 時間流速控制器 -->
+            <div class="flex items-center gap-2 bg-gray-800 px-3 py-1 rounded-lg border border-gray-700 shadow-lg">
+                <span class="text-xs text-gray-400 font-bold">⚡ 速度:</span>
+                <button id="speed-1x" onclick="setGameSpeed(1)" class="px-2.5 py-0.5 text-xs font-bold rounded bg-blue-600 text-white transition-all shadow-sm">1x</button>
+                <button id="speed-2x" onclick="setGameSpeed(2)" class="px-2.5 py-0.5 text-xs font-bold rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all">2x</button>
+                <button id="speed-3x" onclick="setGameSpeed(3)" class="px-2.5 py-0.5 text-xs font-bold rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all">3x</button>
+            </div>
+
+            <div class="text-2xl font-bold text-white drop-shadow-md flex items-center gap-4">
+                <span>💰 金幣: <span id="ui-gold" class="text-yellow-400">150</span></span>
+            </div>
+        </div>
+
+        <div class="relative w-[800px] h-[600px]" id="game-area-wrapper">
+            <canvas id="gameCanvas" width="800" height="600" class="absolute inset-0"></canvas>
+            
+            <!-- 建造選單 -->
+            <div id="build-menu" class="hidden flex gap-2 bg-gray-800 p-2 rounded-lg border border-gray-600 shadow-xl z-20 opacity-95 hover:opacity-100 transition-opacity">
+                <button class="menu-btn hover:bg-gray-700 p-2 rounded flex flex-col items-center" data-type="star">
+                    <span class="text-2xl">⭐</span>
+                    <span class="text-xs text-yellow-300 mt-1">明星塔</span>
+                    <span class="text-[10px] text-gray-400">(10倍極速)</span>
+                    <span class="text-xs text-white font-bold mt-1">$50</span>
+                </button>
+                <button class="menu-btn hover:bg-gray-700 p-2 rounded flex flex-col items-center" data-type="fire">
+                    <span class="text-2xl">🔥</span>
+                    <span class="text-xs text-red-400 mt-1">爆發塔</span>
+                    <span class="text-[10px] text-gray-400">(AOE+燃燒)</span>
+                    <span class="text-xs text-white font-bold mt-1">$80</span>
+                </button>
+                <button class="menu-btn hover:bg-gray-700 p-2 rounded flex flex-col items-center" data-type="ice">
+                    <span class="text-2xl">❄️</span>
+                    <span class="text-xs text-blue-300 mt-1">冰霜塔</span>
+                    <span class="text-[10px] text-gray-400">(範圍緩速)</span>
+                    <span class="text-xs text-white font-bold mt-1">$70</span>
+                </button>
+                <button class="menu-btn hover:bg-gray-700 p-2 rounded flex flex-col items-center" data-type="missile">
+                    <span class="text-2xl">🚀</span>
+                    <span class="text-xs text-purple-400 mt-1">導彈塔</span>
+                    <span class="text-[10px] text-gray-400">(極遠範圍高傷)</span>
+                    <span class="text-xs text-white font-bold mt-1">$120</span>
+                </button>
+                <button id="btn-cancel-build" class="hover:bg-red-900/50 p-2 rounded flex flex-col items-center justify-center text-gray-400">
+                    <span class="text-sm">❌</span>
+                    <span class="text-xs mt-1">取消</span>
+                </button>
+            </div>
+
+            <!-- 升級選單 -->
+            <div id="upgrade-menu" class="hidden flex flex-col gap-2 bg-gray-800 p-3 rounded-lg border border-gray-600 shadow-xl z-20 min-w-[150px] opacity-95 hover:opacity-100 transition-opacity">
+                <div class="text-center font-bold text-sm border-b border-gray-600 pb-1 mb-1 text-white" id="upgrade-title">塔資訊</div>
+                <div class="text-xs text-gray-300 mb-2 leading-relaxed">
+                    等級: <span id="upg-level" class="text-white">1</span>/<span id="upg-max-level">4</span><br>
+                    攻擊: <span id="upg-dmg" class="text-white">10</span><br>
+                    射程: <span id="upg-range" class="text-white">100</span><br>
+                    <span id="upg-effect-desc" class="text-yellow-400 font-semibold"></span>
+                </div>
+                <button id="btn-do-upgrade" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-2 rounded text-sm w-full transition">
+                    升級 ($<span id="upg-cost">50</span>)
+                </button>
+                <button id="btn-do-sell" class="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-2 rounded text-sm w-full transition mt-1">
+                    出售 (+$<span id="sell-value">25</span>)
+                </button>
+                <button id="btn-cancel-upgrade" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-2 rounded text-sm w-full transition mt-1">
+                    取消
+                </button>
+            </div>
+
+            <!-- 對話框 -->
+            <div id="dialogue-container" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-11/12 max-w-[700px] dialogue-box hidden transition-opacity duration-300 z-10 pointer-events-none">
+                <p id="dialogue-text" class="text-xl text-white font-bold"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結束畫面 -->
+    <div id="gameover-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-90 z-50 backdrop-blur-sm">
+        <div class="text-center transform transition-all scale-110">
+            <h1 class="text-6xl font-black text-red-500 mb-4 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">基地被攻破了！</h1>
+            <p class="text-2xl text-gray-200 mb-8">您在 [<span id="final-diff" class="text-blue-400 font-bold">普通</span>] 難度成功抵擋了 <span id="final-wave" class="text-yellow-400 font-bold text-4xl">5</span> 波敵人的攻勢。</p>
+            
+            <button id="btn-home" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xl rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-2 mx-auto">
+                <span>🌀</span> 傳送到大廳
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.getElementById('game-area-wrapper');
+        const CELL_SIZE = 40;
+        const COLS = canvas.width / CELL_SIZE; 
+        const ROWS = canvas.height / CELL_SIZE; 
+
+        let gameState = 'home'; 
+        let animationId;
+        let lastTime = 0;
+
+        // 難度設定
+        let difficulty = 'normal';
+        let difficultyConfig = {
+            easy: { startGold: 200, hpMult: 0.75, waveReward: 40, label: '🟢 簡單', colorClass: 'bg-green-500 text-white' },
+            normal: { startGold: 150, hpMult: 1.00, waveReward: 30, label: '🟡 普通', colorClass: 'bg-yellow-500 text-gray-900' },
+            hard: { startGold: 100, hpMult: 1.30, waveReward: 20, label: '🔴 困難', colorClass: 'bg-red-500 text-white' }
+        };
+
+        let wave = 1;
+        let gold = 150;
+        let enemies = [];
+        let towers = [];
+        let projectiles = [];
+        let particles = [];
+        
+        let enemySpawnCount = 0;
+        let enemiesToSpawn = 0;
+        let spawnTimer = 0;
+        let waveTimer = 0;
+        let isWaveActive = false;
+        
+        let cursorX = 10;
+        let cursorY = 7;
+        let activeMenu = null;
+        let menuGridX = -1;
+        let menuGridY = -1;
+        let selectedTower = null;
+
+        // 遊戲時間流速倍率
+        let gameSpeed = 1;
+
+        const TOWER_TYPES = {
+            star: {
+                emoji: '⭐', name: '明星塔', cost: 50, color: '#fef08a', projectileColor: '#fbbf24',
+                baseDmg: 3, baseRange: 120, baseCooldown: 0.1, // 10倍極速機關槍
+                desc: "⚡極速機關槍！超頻射擊",
+                upgrades: [
+                    { cost: 40, dmg: 5, range: 130 },   
+                    { cost: 80, dmg: 8, range: 150 },   
+                    { cost: 150, dmg: 15, range: 175 }  
+                ]
+            },
+            fire: {
+                emoji: '🔥', name: '爆發塔', cost: 80, color: '#f87171', projectileColor: '#ef4444',
+                baseDmg: 35, baseRange: 80, baseCooldown: 1.5,
+                desc: "💥 AOE爆炸 + 燃燒 DoT",
+                upgrades: [
+                    { cost: 60, dmg: 55, range: 90 }, 
+                    { cost: 120, dmg: 85, range: 100 },
+                    { cost: 200, dmg: 130, range: 110 }
+                ]
+            },
+            ice: {
+                emoji: '❄️', name: '冰霜塔', cost: 70, color: '#93c5fd', projectileColor: '#60a5fa',
+                baseDmg: 8, baseRange: 140, baseCooldown: 1.2,
+                desc: "❄️ 範圍緩速50%",
+                upgrades: [
+                    { cost: 50, dmg: 15, range: 160 }, 
+                    { cost: 100, dmg: 25, range: 180 },
+                    { cost: 180, dmg: 45, range: 200 }
+                ]
+            },
+            missile: {
+                emoji: '🚀', name: '導彈塔', cost: 120, color: '#c084fc', projectileColor: '#a855f7',
+                baseDmg: 75, baseRange: 220, baseCooldown: 3.0,
+                desc: "🚀 極遠射程，💥 超大範圍毀滅傷害", // 說明更新
+                upgrades: [
+                    { cost: 90, dmg: 130, range: 240 }, 
+                    { cost: 160, dmg: 190, range: 260 },
+                    { cost: 250, dmg: 260, range: 280 }
+                ]
+            }
+        };
+
+        let mapGrid = [];
+        const pathCoords = [
+            {x: 0, y: 3}, {x: 1, y: 3}, {x: 2, y: 3}, {x: 3, y: 3}, {x: 4, y: 3}, {x: 5, y: 3},
+            {x: 5, y: 4}, {x: 5, y: 5}, {x: 5, y: 6}, {x: 6, y: 6}, {x: 7, y: 6}, {x: 8, y: 6},
+            {x: 9, y: 6}, {x: 10, y: 6}, {x: 10, y: 7}, {x: 10, y: 8}, {x: 10, y: 9}, {x: 10, y: 10},
+            {x: 9, y: 10}, {x: 8, y: 10}, {x: 7, y: 10}, {x: 6, y: 10}, {x: 5, y: 10}, {x: 4, y: 10},
+            {x: 3, y: 10}, {x: 2, y: 10}, {x: 2, y: 11}, {x: 2, y: 12}, {x: 2, y: 13}, {x: 3, y: 13},
+            {x: 4, y: 13}, {x: 5, y: 13}, {x: 6, y: 13}, {x: 7, y: 13}, {x: 8, y: 13}, {x: 9, y: 13},
+            {x: 10, y: 13}, {x: 11, y: 13}, {x: 12, y: 13}, {x: 13, y: 13}, {x: 14, y: 13}, {x: 15, y: 13},
+            {x: 16, y: 13}, {x: 17, y: 13}, {x: 18, y: 13}, {x: 19, y: 13}
+        ];
+        const BASE_POS = pathCoords[pathCoords.length - 1];
+
+        // 難度切換設定
+        function setDifficulty(level) {
+            difficulty = level;
+            const buttons = {
+                easy: document.getElementById('diff-easy'),
+                normal: document.getElementById('diff-normal'),
+                hard: document.getElementById('diff-hard')
+            };
+            const desc = document.getElementById('diff-desc');
+
+            buttons.easy.className = "px-4 py-2 rounded-xl border-2 border-green-500 bg-green-950/40 text-green-400 font-bold transition-all hover:bg-green-500/20";
+            buttons.normal.className = "px-4 py-2 rounded-xl border-2 border-yellow-500 bg-yellow-950/40 text-yellow-400 font-bold transition-all hover:bg-yellow-500/20";
+            buttons.hard.className = "px-4 py-2 rounded-xl border-2 border-red-500 bg-red-950/40 text-red-400 font-bold transition-all hover:bg-red-500/20";
+
+            if (level === 'easy') {
+                buttons.easy.className = "px-4 py-2 rounded-xl border-2 border-green-500 bg-green-500 text-gray-900 font-bold transition-all";
+                desc.innerText = "起始金幣 $200，怪物血量偏低 (75%)";
+            } else if (level === 'normal') {
+                buttons.normal.className = "px-4 py-2 rounded-xl border-2 border-yellow-500 bg-yellow-500 text-gray-900 font-bold transition-all";
+                desc.innerText = "起始金幣 $150，怪物血量正常 (100%)";
+            } else if (level === 'hard') {
+                buttons.hard.className = "px-4 py-2 rounded-xl border-2 border-red-500 bg-red-500 text-white font-bold transition-all";
+                desc.innerText = "起始金幣 $100，怪物血量偏高 (130%)，防守高難度！";
+            }
+        }
+
+        // 設置遊戲流速
+        function setGameSpeed(speed) {
+            gameSpeed = speed;
+            const btn1 = document.getElementById('speed-1x');
+            const btn2 = document.getElementById('speed-2x');
+            const btn3 = document.getElementById('speed-3x');
+
+            [btn1, btn2, btn3].forEach(btn => {
+                btn.className = "px-2.5 py-0.5 text-xs font-bold rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all";
+            });
+
+            if (speed === 1) btn1.className = "px-2.5 py-0.5 text-xs font-bold rounded bg-blue-600 text-white transition-all shadow-sm";
+            if (speed === 2) btn2.className = "px-2.5 py-0.5 text-xs font-bold rounded bg-yellow-500 text-gray-900 transition-all shadow-sm";
+            if (speed === 3) btn3.className = "px-2.5 py-0.5 text-xs font-bold rounded bg-red-500 text-white transition-all shadow-sm";
+        }
+
+        function initGrid() {
+            mapGrid = [];
+            for (let y = 0; y < ROWS; y++) {
+                let row = [];
+                for (let x = 0; x < COLS; x++) row.push(0);
+                mapGrid.push(row);
+            }
+            pathCoords.forEach(p => mapGrid[p.y][p.x] = 1);
+            mapGrid[BASE_POS.y][BASE_POS.x] = 3; 
+        }
+
+        function startGame() {
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+            closeMenus();
+            
+            initGrid();
+            wave = 1;
+
+            const config = difficultyConfig[difficulty];
+            gold = config.startGold;
+            
+            const tag = document.getElementById('ui-diff-tag');
+            tag.innerText = config.label;
+            tag.className = `text-xs px-2 py-0.5 rounded-full font-bold ${config.colorClass}`;
+
+            enemies = [];
+            towers = [];
+            projectiles = [];
+            particles = [];
+            isWaveActive = false;
+            waveTimer = 3; 
+            cursorX = 10; cursorY = 7;
+            
+            setGameSpeed(1);
+            updateUI();
+            showDialogue(`挑戰開始！難度：${config.label}\n點擊草地挑選你的防禦明星。`);
+            
+            gameState = 'playing';
+            lastTime = performance.now(); 
+            cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver() {
+            gameState = 'gameover';
+            closeMenus();
+            document.getElementById('final-wave').innerText = wave;
+            document.getElementById('final-diff').innerText = difficultyConfig[difficulty].label;
+            document.getElementById('gameover-screen').classList.remove('hidden');
+        }
+
+        function returnToLobby() {
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('home-screen').classList.remove('hidden');
+            gameState = 'home';
+            cancelAnimationFrame(animationId);
+            hideDialogue();
+            closeMenus();
+        }
+
+        const uiGold = document.getElementById('ui-gold');
+        const uiWave = document.getElementById('ui-wave');
+        const dialogueContainer = document.getElementById('dialogue-container');
+        const dialogueText = document.getElementById('dialogue-text');
+        const buildMenu = document.getElementById('build-menu');
+        const upgradeMenu = document.getElementById('upgrade-menu');
+        let dialogueTimeout;
+
+        function updateUI() {
+            uiGold.innerText = gold;
+            uiWave.innerText = wave;
+            if (activeMenu === 'upgrade' && selectedTower) updateUpgradeMenuUI();
+        }
+
+        function showDialogue(text, duration = 4000) {
+            dialogueText.innerHTML = text.replace('\n', '<br>');
+            dialogueContainer.classList.remove('hidden');
+            clearTimeout(dialogueTimeout);
+            if (duration < 999999) {
+                dialogueTimeout = setTimeout(hideDialogue, duration);
+            }
+        }
+
+        function hideDialogue() {
+            dialogueContainer.classList.add('hidden');
+        }
+
+        function openBuildMenu(x, y) {
+            closeMenus();
+            activeMenu = 'build';
+            menuGridX = x;
+            menuGridY = y;
+            const posX = (x * CELL_SIZE) + (CELL_SIZE / 2);
+            const posY = (y * CELL_SIZE);
+            buildMenu.style.left = `${posX}px`;
+            buildMenu.style.top = `${posY}px`;
+            buildMenu.classList.remove('hidden');
+        }
+
+        function openUpgradeMenu(tower) {
+            closeMenus();
+            activeMenu = 'upgrade';
+            selectedTower = tower;
+            menuGridX = tower.gridX;
+            menuGridY = tower.gridY;
+            const posX = (tower.gridX * CELL_SIZE) + (CELL_SIZE / 2);
+            const posY = (tower.gridY * CELL_SIZE);
+            upgradeMenu.style.left = `${posX}px`;
+            upgradeMenu.style.top = `${posY}px`;
+            upgradeMenu.classList.remove('hidden');
+            updateUpgradeMenuUI();
+        }
+        
+        function updateUpgradeMenuUI() {
+            if (!selectedTower) return;
+            const t = selectedTower;
+            const typeData = TOWER_TYPES[t.type];
+            const maxLevel = typeData.upgrades.length + 1; 
+            
+            document.getElementById('upgrade-title').innerText = `${typeData.name} Lv.${t.level}`;
+            document.getElementById('upg-level').innerText = t.level;
+            document.getElementById('upg-max-level').innerText = maxLevel;
+            document.getElementById('upg-dmg').innerText = t.damage;
+            document.getElementById('upg-range').innerText = t.range;
+            document.getElementById('upg-effect-desc').innerText = typeData.desc;
+            
+            let totalInvestment = typeData.cost;
+            for (let i = 0; i < t.level - 1; i++) {
+                totalInvestment += typeData.upgrades[i].cost;
+            }
+            const sellValue = Math.floor(totalInvestment * 0.5);
+            document.getElementById('sell-value').innerText = sellValue;
+            
+            const btn = document.getElementById('btn-do-upgrade');
+            if (t.level < maxLevel) {
+                const cost = typeData.upgrades[t.level - 1].cost;
+                btn.innerHTML = `升級 ($<span id="upg-cost">${cost}</span>)`;
+                btn.disabled = false;
+                if (gold < cost) {
+                    btn.classList.add('bg-gray-500', 'cursor-not-allowed');
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-500');
+                } else {
+                    btn.classList.remove('bg-gray-500', 'cursor-not-allowed');
+                    btn.classList.add('bg-blue-600', 'hover:bg-blue-500');
+                }
+            } else {
+                btn.innerHTML = `已滿級<span id="upg-cost" class="hidden"></span>`;
+                btn.disabled = true;
+                btn.classList.add('bg-gray-500', 'cursor-not-allowed');
+                btn.classList.remove('bg-blue-600', 'hover:bg-blue-500');
+            }
+        }
+
+        function closeMenus() {
+            buildMenu.classList.add('hidden');
+            upgradeMenu.classList.add('hidden');
+            activeMenu = null;
+            selectedTower = null;
+        }
+
+        function tryBuild(typeKey) {
+            if (activeMenu !== 'build' || gameState !== 'playing') return;
+            const typeData = TOWER_TYPES[typeKey];
+            if (gold >= typeData.cost) {
+                gold -= typeData.cost;
+                towers.push(new Tower(menuGridX, menuGridY, typeKey));
+                mapGrid[menuGridY][menuGridX] = 2; 
+                updateUI();
+                closeMenus();
+            } else {
+                showDialogue(`金幣不足！需要 ${typeData.cost} 金幣。`, 2000);
+            }
+        }
+
+        function tryUpgrade() {
+            if (activeMenu !== 'upgrade' || !selectedTower || gameState !== 'playing') return;
+            const t = selectedTower;
+            const typeData = TOWER_TYPES[t.type];
+            const maxLevel = typeData.upgrades.length + 1;
+            
+            if (t.level < maxLevel) {
+                const upgradeData = typeData.upgrades[t.level - 1];
+                if (gold >= upgradeData.cost) {
+                    gold -= upgradeData.cost;
+                    t.level++;
+                    t.damage = upgradeData.dmg;
+                    t.range = upgradeData.range;
+                    updateUI();
+                    for(let i=0; i<10; i++) particles.push(new Particle(t.x, t.y, '#3b82f6', 4));
+                    
+                    if (t.level === maxLevel) {
+                        showDialogue(`太棒了！${typeData.name} 已達到最高等級！`, 2000);
+                        closeMenus();
+                    } else {
+                        updateUpgradeMenuUI();
+                    }
+                } else {
+                    showDialogue("金幣不足以升級！", 2000);
+                }
+            }
+        }
+
+        function trySell() {
+            if (activeMenu !== 'upgrade' || !selectedTower || gameState !== 'playing') return;
+            const t = selectedTower;
+            const typeData = TOWER_TYPES[t.type];
+            
+            let totalInvestment = typeData.cost;
+            for (let i = 0; i < t.level - 1; i++) {
+                totalInvestment += typeData.upgrades[i].cost;
+            }
+            const sellValue = Math.floor(totalInvestment * 0.5);
+            
+            gold += sellValue;
+            
+            const towerIndex = towers.indexOf(t);
+            if (towerIndex > -1) {
+                towers.splice(towerIndex, 1);
+            }
+            mapGrid[t.gridY][t.gridX] = 0;
+            
+            updateUI();
+            for(let i=0; i<15; i++) particles.push(new Particle(t.x, t.y, '#fbbf24', 5));
+            showDialogue(`出售了 ${typeData.name}，獲得 $${sellValue}！`, 2000);
+            closeMenus();
+        }
+
+        document.querySelectorAll('.menu-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                tryBuild(btn.getAttribute('data-type'));
+            });
+        });
+        document.getElementById('btn-cancel-build').addEventListener('click', (e) => { e.stopPropagation(); closeMenus(); });
+        document.getElementById('btn-do-upgrade').addEventListener('click', (e) => { e.stopPropagation(); tryUpgrade(); });
+        document.getElementById('btn-do-sell').addEventListener('click', (e) => { e.stopPropagation(); trySell(); });
+        document.getElementById('btn-cancel-upgrade').addEventListener('click', (e) => { e.stopPropagation(); closeMenus(); });
+
+        class Enemy {
+            constructor(hpMultiplier) {
+                this.pathIndex = 0;
+                this.x = pathCoords[0].x * CELL_SIZE + CELL_SIZE/2;
+                this.y = pathCoords[0].y * CELL_SIZE + CELL_SIZE/2;
+                this.baseSpeed = 60; 
+                this.speed = this.baseSpeed;
+                
+                const diffMult = difficultyConfig[difficulty].hpMult;
+                this.maxHp = (30 + (wave * 30 * hpMultiplier)) * diffMult;
+                this.hp = this.maxHp;
+                
+                this.reward = (difficulty === 'easy' ? 12 : (difficulty === 'hard' ? 8 : 10)) + Math.floor(wave / 2);
+                this.emoji = ['👾', '👹', '👺', '👻', '💀'][Math.min(Math.floor((wave-1)/2), 4)];
+                
+                this.slowTimer = 0;
+                this.burnTimer = 0;
+                this.burnDamageTimer = 0;
+                this.burnDamagePerSecond = 0;
+            }
+            applySlow(duration) { 
+                this.slowTimer = duration; 
+            }
+            applyBurn(duration, damagePerSecond) {
+                this.burnTimer = duration;
+                this.burnDamagePerSecond = damagePerSecond;
+            }
+            update(dt) {
+                if (this.pathIndex >= pathCoords.length - 1) return;
+                
+                if (this.slowTimer > 0) {
+                    this.slowTimer -= dt;
+                    this.speed = this.baseSpeed * 0.5; 
+                    if (Math.random() < 0.15) {
+                        particles.push(new Particle(this.x, this.y, '#93c5fd', 2)); 
+                    }
+                } else { 
+                    this.speed = this.baseSpeed; 
+                }
+
+                if (this.burnTimer > 0) {
+                    this.burnTimer -= dt;
+                    this.hp -= this.burnDamagePerSecond * dt; 
+                    if (Math.random() < 0.25) {
+                        particles.push(new Particle(this.x, this.y, '#f97316', 3)); 
+                    }
+                }
+
+                let targetPoint = pathCoords[this.pathIndex + 1];
+                let targetX = targetPoint.x * CELL_SIZE + CELL_SIZE/2;
+                let targetY = targetPoint.y * CELL_SIZE + CELL_SIZE/2;
+                let dx = targetX - this.x; let dy = targetY - this.y;
+                let dist = Math.hypot(dx, dy);
+
+                if (dist < 2) {
+                    this.pathIndex++; this.x = targetX; this.y = targetY;
+                } else {
+                    let moveAmount = this.speed * dt;
+                    if (moveAmount > dist) moveAmount = dist;
+                    this.x += (dx / dist) * moveAmount; this.y += (dy / dist) * moveAmount;
+                }
+            }
+            draw(ctx) {
+                ctx.font = "24px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(this.emoji, this.x, this.y);
+                
+                if (this.slowTimer > 0) {
+                    ctx.fillStyle = "rgba(147, 197, 253, 0.4)"; 
+                    ctx.beginPath(); 
+                    ctx.arc(this.x, this.y, 16, 0, Math.PI*2); 
+                    ctx.fill();
+                }
+                if (this.burnTimer > 0) {
+                    ctx.fillStyle = "rgba(249, 115, 22, 0.35)"; 
+                    ctx.beginPath(); 
+                    ctx.arc(this.x, this.y, 15, 0, Math.PI*2); 
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = "red"; ctx.fillRect(this.x - 15, this.y - 20, 30, 4);
+                ctx.fillStyle = "#22c55e"; ctx.fillRect(this.x - 15, this.y - 20, 30 * (this.hp / this.maxHp), 4);
+            }
+        }
+
+        class Tower {
+            constructor(x, y, typeKey) {
+                this.gridX = x; this.gridY = y;
+                this.x = x * CELL_SIZE + CELL_SIZE/2; this.y = y * CELL_SIZE + CELL_SIZE/2;
+                this.type = typeKey; const typeData = TOWER_TYPES[typeKey];
+                this.level = 1; this.range = typeData.baseRange; this.damage = typeData.baseDmg; this.cooldown = typeData.baseCooldown;
+                this.timer = 0; this.target = null;
+            }
+            update(dt) {
+                this.timer -= dt;
+                if (!this.target || this.target.hp <= 0 || Math.hypot(this.target.x - this.x, this.target.y - this.y) > this.range) {
+                    this.target = null; let closestDist = this.range;
+                    for (let enemy of enemies) {
+                        let dist = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+                        if (dist <= closestDist) { closestDist = dist; this.target = enemy; }
+                    }
+                }
+                if (this.target && this.timer <= 0) { this.shoot(); this.timer = this.cooldown; }
+            }
+            shoot() {
+                projectiles.push(new Projectile(this.x, this.y, this.target, this.damage, this.type));
+                particles.push(new Particle(this.x, this.y, TOWER_TYPES[this.type].projectileColor, 5));
+            }
+            draw(ctx) {
+                const typeData = TOWER_TYPES[this.type];
+                const maxLevel = typeData.upgrades.length + 1;
+                
+                ctx.beginPath(); ctx.arc(this.x, this.y + 10, 16, 0, Math.PI * 2);
+                
+                if (this.level === maxLevel) {
+                    ctx.fillStyle = "rgba(255,215,0,0.5)"; 
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = "gold";
+                } else if (this.level > 1) {
+                    ctx.fillStyle = "rgba(192,192,192,0.4)"; 
+                    ctx.shadowBlur = 0;
+                } else {
+                    ctx.fillStyle = "rgba(0,0,0,0.2)"; 
+                    ctx.shadowBlur = 0;
+                }
+                
+                ctx.fill();
+                ctx.shadowBlur = 0; 
+                
+                ctx.font = "28px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                ctx.fillText(typeData.emoji, this.x, this.y);
+                
+                if (this.level > 1) {
+                    ctx.fillStyle = this.level === maxLevel ? "#fde047" : "white"; 
+                    ctx.font = "bold 12px Arial"; 
+                    ctx.fillText(this.level === maxLevel ? "MAX" : `L${this.level}`, this.x + 12, this.y - 12);
+                }
+            }
+        }
+
+        class Projectile {
+            constructor(x, y, target, damage, type) {
+                this.x = x; this.y = y; this.target = target; this.damage = damage; this.type = type;
+                this.speed = type === 'missile' ? 220 : 350; 
+                this.active = true;
+            }
+            update(dt) {
+                if (!this.active || !this.target) return;
+                let dx = this.target.x - this.x; let dy = this.target.y - this.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist < 10) {
+                    this.hit();
+                    this.active = false;
+                    return;
+                }
+                let moveAmount = this.speed * dt;
+                this.x += (dx / dist) * moveAmount; this.y += (dy / dist) * moveAmount;
+
+                if (this.type === 'missile' && Math.random() < 0.4) {
+                    particles.push(new Particle(this.x, this.y, '#d8b4fe', 3));
+                }
+            }
+            
+            hit() {
+                const target = this.target;
+                
+                if (this.type === 'star') {
+                    target.hp -= this.damage;
+                    for (let i = 0; i < 4; i++) {
+                        particles.push(new Particle(this.x, this.y, '#fbbf24', 3));
+                    }
+                } 
+                else if (this.type === 'fire') {
+                    const splashRadius = 70; 
+                    const burnDuration = 3.0; 
+                    const burnDmgPerSec = this.damage * 0.35; 
+                    
+                    for (let i = 0; i < 15; i++) {
+                        particles.push(new Particle(this.x, this.y, '#ef4444', 4)); 
+                        particles.push(new Particle(this.x, this.y, '#f97316', 3)); 
+                    }
+                    
+                    enemies.forEach(e => {
+                        let d = Math.hypot(e.x - this.x, e.y - this.y);
+                        if (d <= splashRadius) {
+                            e.hp -= this.damage; 
+                            e.applyBurn(burnDuration, burnDmgPerSec); 
+                        }
+                    });
+                } 
+                else if (this.type === 'ice') {
+                    const slowRadius = 90; 
+                    const slowDuration = 2.5; 
+                    
+                    for (let i = 0; i < 10; i++) {
+                        particles.push(new Particle(this.x, this.y, '#60a5fa', 3)); 
+                        particles.push(new Particle(this.x, this.y, '#93c5fd', 2)); 
+                    }
+                    
+                    enemies.forEach(e => {
+                        let d = Math.hypot(e.x - this.x, e.y - this.y);
+                        if (d <= slowRadius) {
+                            e.hp -= this.damage; 
+                            e.applySlow(slowDuration); 
+                        }
+                    });
+                }
+                else if (this.type === 'missile') {
+                    // 導彈塔全面修改為：超大範圍高能高爆衝擊波！
+                    const splashRadius = 100; // 比爆發塔更寬廣的殺傷範圍
+                    
+                    // 產生更大規模的高能量紫色與白色高亮粒子群
+                    for (let i = 0; i < 25; i++) {
+                        particles.push(new Particle(this.x, this.y, '#c084fc', 5)); // 紫色
+                        particles.push(new Particle(this.x, this.y, '#a855f7', 3)); // 深紫
+                        particles.push(new Particle(this.x, this.y, '#ffffff', 2)); // 白色高亮
+                    }
+
+                    // 對範圍內的所有怪物造成同等的滿額巨大傷害！
+                    enemies.forEach(e => {
+                        let d = Math.hypot(e.x - this.x, e.y - this.y);
+                        if (d <= splashRadius) {
+                            e.hp -= this.damage; 
+                        }
+                    });
+                }
+            }
+            
+            draw(ctx) {
+                const color = TOWER_TYPES[this.type].projectileColor;
+                ctx.beginPath();
+                if (this.type === 'missile') {
+                    ctx.arc(this.x, this.y, 7, 0, Math.PI * 2);
+                } else {
+                    ctx.arc(this.x, this.y, this.type === 'fire' ? 6 : 4, 0, Math.PI * 2);
+                }
+                ctx.fillStyle = color; ctx.fill();
+                ctx.shadowBlur = 12; ctx.shadowColor = color; ctx.fill(); ctx.shadowBlur = 0;
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color, size) {
+                this.x = x; this.y = y; this.color = color; this.size = size; this.life = 1.0;
+                this.vx = (Math.random() - 0.5) * 120; this.vy = (Math.random() - 0.5) * 120;
+            }
+            update(dt) { this.x += this.vx * dt; this.y += this.vy * dt; this.life -= dt * 3.5; }
+            draw(ctx) {
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+                ctx.fillStyle = this.color; ctx.fill(); ctx.globalAlpha = 1.0;
+            }
+        }
+
+        function handleInteraction(gX, gY) {
+            if (gX < 0 || gX >= COLS || gY < 0 || gY >= ROWS || gameState !== 'playing') return;
+            const tileStatus = mapGrid[gY][gX];
+            if (tileStatus === 0) {
+                if (activeMenu === 'build' && menuGridX === gX && menuGridY === gY) closeMenus();
+                else openBuildMenu(gX, gY);
+            } else if (tileStatus === 2) {
+                const clickedTower = towers.find(t => t.gridX === gX && t.gridY === gY);
+                if (clickedTower) {
+                    if (activeMenu === 'upgrade' && selectedTower === clickedTower) closeMenus();
+                    else openUpgradeMenu(clickedTower);
+                }
+            } else { closeMenus(); }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (gameState !== 'playing') return;
+            
+            if (activeMenu === 'build') {
+                if (e.key === '1') tryBuild('star');
+                if (e.key === '2') tryBuild('fire');
+                if (e.key === '3') tryBuild('ice');
+                if (e.key === '4') tryBuild('missile');
+                if (e.key === 'Escape') closeMenus();
+            } else if (activeMenu === 'upgrade') {
+                if (e.key === 'Enter' || e.key === ' ') { tryUpgrade(); e.preventDefault(); }
+                if (e.key === 'x' || e.key === 'X' || e.key === 'Backspace') { trySell(); e.preventDefault(); }
+                if (e.key === 'Escape') closeMenus();
+            }
+
+            switch(e.key) {
+                case 'w': case 'W': case 'ArrowUp': cursorY = Math.max(0, cursorY - 1); break;
+                case 's': case 'S': case 'ArrowDown': cursorY = Math.min(ROWS - 1, cursorY + 1); break;
+                case 'a': case 'A': case 'ArrowLeft': cursorX = Math.max(0, cursorX - 1); break;
+                case 'd': case 'D': case 'ArrowRight': cursorX = Math.min(COLS - 1, cursorX + 1); break;
+                case ' ': case 'Enter': 
+                    if (!activeMenu) handleInteraction(cursorX, cursorY); 
+                    e.preventDefault(); break;
+                case '7': setGameSpeed(1); break;
+                case '8': setGameSpeed(2); break;
+                case '9': setGameSpeed(3); break;
+            }
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (gameState !== 'playing') return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX; const mouseY = (e.clientY - rect.top) * scaleY;
+            const gX = Math.floor(mouseX / CELL_SIZE); const gY = Math.floor(mouseY / CELL_SIZE);
+            cursorX = gX; cursorY = gY;
+            handleInteraction(gX, gY);
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (gameState !== 'playing') return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX; const mouseY = (e.clientY - rect.top) * scaleY;
+            cursorX = Math.floor(mouseX / CELL_SIZE); cursorY = Math.floor(mouseY / CELL_SIZE);
+        });
+
+        wrapper.addEventListener('mousedown', (e) => {
+            if (e.target === wrapper && gameState === 'playing') closeMenus();
+        });
+
+        document.getElementById('btn-start').addEventListener('click', startGame);
+        document.getElementById('btn-home').addEventListener('click', returnToLobby);
+
+        function update(dt) {
+            if (!isWaveActive) {
+                waveTimer -= dt;
+                if (waveTimer <= 0) {
+                    isWaveActive = true; 
+                    const countMult = difficulty === 'hard' ? 1.5 : (difficulty === 'easy' ? 0.8 : 1.0);
+                    enemiesToSpawn = Math.max(4, Math.floor((5 + Math.floor(wave * 2.5)) * countMult)); 
+                    enemySpawnCount = 0; 
+                    spawnTimer = 0;
+                    if(wave > 1) showDialogue(`第 ${wave} 波攻勢來襲！準備迎戰！`, 3000);
+                }
+            } else {
+                if (enemySpawnCount < enemiesToSpawn) {
+                    spawnTimer -= dt;
+                    if (spawnTimer <= 0) {
+                        let hpMulti = (Math.random() < 0.25 && wave > 2) ? 1.6 : 1; 
+                        enemies.push(new Enemy(hpMulti)); 
+                        enemySpawnCount++; 
+                        spawnTimer = Math.max(0.4, 1.2 - (wave * 0.05)); 
+                    }
+                } else if (enemies.length === 0) {
+                    isWaveActive = false; 
+                    wave++; 
+                    waveTimer = difficulty === 'hard' ? 3 : 4; 
+                    
+                    const config = difficultyConfig[difficulty];
+                    gold += config.waveReward + wave * 5; 
+                    
+                    updateUI();
+                    showDialogue(`成功防守！獲得資金補給。\n下一波將在 ${waveTimer} 秒後到達。`, 3000);
+                }
+            }
+            towers.forEach(t => t.update(dt)); projectiles.forEach(p => p.update(dt)); particles.forEach(p => p.update(dt));
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i]; e.update(dt);
+                if (e.pathIndex >= pathCoords.length - 1) { gameOver(); return; }
+                if (e.hp <= 0) {
+                    gold += e.reward; updateUI();
+                    for(let j=0; j<5; j++) particles.push(new Particle(e.x, e.y, 'white', 4));
+                    enemies.splice(i, 1);
+                }
+            }
+            projectiles = projectiles.filter(p => p.active); particles = particles.filter(p => p.life > 0);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (mapGrid[y][x] === 1 || mapGrid[y][x] === 3) {
+                        ctx.fillStyle = "#d1d5db"; ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                        ctx.strokeStyle = "#9ca3af"; ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    } else {
+                        ctx.strokeStyle = "rgba(255,255,255,0.1)"; ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+            }
+            ctx.font = "32px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText("🏰", BASE_POS.x * CELL_SIZE + CELL_SIZE/2, BASE_POS.y * CELL_SIZE + CELL_SIZE/2);
+            towers.forEach(t => t.draw(ctx)); enemies.forEach(e => e.draw(ctx));
+            projectiles.forEach(p => p.draw(ctx)); particles.forEach(p => p.draw(ctx));
+
+            ctx.strokeStyle = "white"; ctx.lineWidth = 2;
+            ctx.strokeRect(cursorX * CELL_SIZE, cursorY * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            
+            if (activeMenu === 'upgrade' && selectedTower) {
+                drawRange(selectedTower.x, selectedTower.y, selectedTower.range, TOWER_TYPES[selectedTower.type].color);
+            } else if (mapGrid[cursorY] && mapGrid[cursorY][cursorX] === 0 && !activeMenu) {
+                drawRange(cursorX * CELL_SIZE + CELL_SIZE/2, cursorY * CELL_SIZE + CELL_SIZE/2, TOWER_TYPES.star.baseRange, "rgba(255, 255, 255, 0.3)");
+            } else if (mapGrid[cursorY] && mapGrid[cursorY][cursorX] === 2 && !activeMenu) {
+                const hoverTower = towers.find(t => t.gridX === cursorX && t.gridY === cursorY);
+                if (hoverTower) { drawRange(hoverTower.x, hoverTower.y, hoverTower.range, TOWER_TYPES[hoverTower.type].color); }
+            }
+        }
+        
+        function drawRange(x, y, radius, colorStr) {
+            ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; ctx.fill();
+            ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+        }
+
+        function gameLoop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            let dt = (timestamp - lastTime) / 1000;
+            if (dt > 0.1) dt = 0.1; 
+            lastTime = timestamp;
+
+            if (gameState === 'playing') {
+                update(dt * gameSpeed);
+                if (gameState === 'playing') { 
+                    draw();
+                }
+            }
+            
+            if (gameState === 'playing') {
+                animationId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+    </script>
+</body>
+</html>
