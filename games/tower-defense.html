@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全明星塔防 - 導彈防衛與倍速版</title>
+    <title>全名星塔房 - 導彈防衛與倍速版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
@@ -81,7 +81,7 @@
             </div>
 
             <div class="text-gray-400 mb-6 font-medium text-xs">
-                作者：<span class="text-white">陳品勳</span> &bull; 導彈範圍傷害版
+                作者：<span class="text-white">陳品勳</span> &bull; 圖像進化版
             </div>
 
             <button id="btn-start" class="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white font-bold text-xl rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
@@ -194,6 +194,21 @@
         const COLS = canvas.width / CELL_SIZE; 
         const ROWS = canvas.height / CELL_SIZE; 
 
+        // 圖片資源管理
+        const IMAGES = {
+            star: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2JJIGrsp6DdisAFFmHQbd7iFnUzKHKNoteOLOqPc8_g&s=10', loaded: false, img: new Image() },
+            fire: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVyyTC4QFjgzLIe6K8r6SS5p1mBSVsV6niXK-XhEJCvw&s=10', loaded: false, img: new Image() },
+            ice: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbtuFsdFoa5HPqCJqufn1mAHn5u2szpvLMu7J02d2-6g&s=10', loaded: false, img: new Image() },
+            missile: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSi61KtUvUjpLDa1uh6E-TyUHkQGkGv1RmWJCIl7QRLNA&s=10', loaded: false, img: new Image() },
+            missileExplosion: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXODQT34AeMjN2d1oTToNmvit6eQ5adeD6qWDGBlcDtA&s=10', loaded: false, img: new Image() }
+        };
+
+        // 預先載入所有圖片資源
+        for (let key in IMAGES) {
+            IMAGES[key].img.src = IMAGES[key].src;
+            IMAGES[key].img.onload = () => { IMAGES[key].loaded = true; };
+        }
+
         let gameState = 'home'; 
         let animationId;
         let lastTime = 0;
@@ -212,6 +227,7 @@
         let towers = [];
         let projectiles = [];
         let particles = [];
+        let explosions = []; // 新增爆炸效果陣列
         
         let enemySpawnCount = 0;
         let enemiesToSpawn = 0;
@@ -263,7 +279,7 @@
             missile: {
                 emoji: '🚀', name: '導彈塔', cost: 120, color: '#c084fc', projectileColor: '#a855f7',
                 baseDmg: 75, baseRange: 220, baseCooldown: 3.0,
-                desc: "🚀 極遠射程，💥 超大範圍毀滅傷害", // 說明更新
+                desc: "🚀 極遠射程，💥 超大範圍毀滅傷害", 
                 upgrades: [
                     { cost: 90, dmg: 130, range: 240 }, 
                     { cost: 160, dmg: 190, range: 260 },
@@ -358,6 +374,7 @@
             towers = [];
             projectiles = [];
             particles = [];
+            explosions = [];
             isWaveActive = false;
             waveTimer = 3; 
             cursorX = 10; cursorY = 7;
@@ -679,31 +696,86 @@
                 const typeData = TOWER_TYPES[this.type];
                 const maxLevel = typeData.upgrades.length + 1;
                 
-                ctx.beginPath(); ctx.arc(this.x, this.y + 10, 16, 0, Math.PI * 2);
+                // 1. 繪製底部圓形
+                ctx.beginPath(); ctx.arc(this.x, this.y, 18, 0, Math.PI * 2);
                 
                 if (this.level === maxLevel) {
-                    ctx.fillStyle = "rgba(255,215,0,0.5)"; 
+                    ctx.fillStyle = "rgba(255,215,0,0.6)"; 
                     ctx.shadowBlur = 15;
                     ctx.shadowColor = "gold";
                 } else if (this.level > 1) {
-                    ctx.fillStyle = "rgba(192,192,192,0.4)"; 
+                    ctx.fillStyle = "rgba(192,192,192,0.6)"; 
                     ctx.shadowBlur = 0;
                 } else {
-                    ctx.fillStyle = "rgba(0,0,0,0.2)"; 
+                    // 基礎圓形底色：對應各自防禦塔的主體色調
+                    ctx.fillStyle = typeData.color + "99"; // 透明度 60%
                     ctx.shadowBlur = 0;
                 }
-                
                 ctx.fill();
                 ctx.shadowBlur = 0; 
+
+                // 2. 圓形邊框，加強立體感
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+                ctx.lineWidth = 2;
+                ctx.stroke();
                 
-                ctx.font = "28px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                ctx.fillText(typeData.emoji, this.x, this.y);
+                // 3. 在圓形底色上方蓋上圖片 (若圖片載入失敗，會 fallback 顯示原 emoji 符號)
+                if (IMAGES[this.type] && IMAGES[this.type].loaded) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 16, 0, Math.PI * 2);
+                    ctx.clip(); // 限制圖片在圓形內
+                    ctx.drawImage(IMAGES[this.type].img, this.x - 16, this.y - 16, 32, 32);
+                    ctx.restore();
+                } else {
+                    ctx.font = "24px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                    ctx.fillText(typeData.emoji, this.x, this.y);
+                }
                 
+                // 4. 顯示等級文字
                 if (this.level > 1) {
                     ctx.fillStyle = this.level === maxLevel ? "#fde047" : "white"; 
-                    ctx.font = "bold 12px Arial"; 
+                    ctx.font = "bold 11px Arial"; 
+                    ctx.strokeStyle = "black";
+                    ctx.lineWidth = 2;
+                    ctx.strokeText(this.level === maxLevel ? "MAX" : `L${this.level}`, this.x + 12, this.y - 12);
                     ctx.fillText(this.level === maxLevel ? "MAX" : `L${this.level}`, this.x + 12, this.y - 12);
                 }
+            }
+        }
+
+        // 新增：獨立的爆炸效果類別，能完美展現大範圍高爆特效圖片
+        class ExplosionEffect {
+            constructor(x, y, type, size = 80, duration = 0.4) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.size = size;
+                this.maxLife = duration;
+                this.life = duration;
+            }
+            update(dt) {
+                this.life -= dt;
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
+                let currentScaleSize = this.size * (1.2 - (this.life / this.maxLife) * 0.4); // 產生逐漸擴散的效果
+
+                let imgKey = 'missileExplosion'; // 預設使用導彈爆炸
+                if (this.type === 'fire') imgKey = 'fire';
+                if (this.type === 'ice') imgKey = 'ice';
+
+                if (IMAGES[imgKey] && IMAGES[imgKey].loaded) {
+                    ctx.drawImage(IMAGES[imgKey].img, this.x - currentScaleSize/2, this.y - currentScaleSize/2, currentScaleSize, currentScaleSize);
+                } else {
+                    // Fallback 幾何圖形
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, currentScaleSize/2, 0, Math.PI * 2);
+                    ctx.fillStyle = this.type === 'ice' ? "rgba(147, 197, 253, 0.5)" : "rgba(239, 68, 68, 0.6)";
+                    ctx.fill();
+                }
+                ctx.restore();
             }
         }
 
@@ -744,9 +816,11 @@
                     const burnDuration = 3.0; 
                     const burnDmgPerSec = this.damage * 0.35; 
                     
-                    for (let i = 0; i < 15; i++) {
-                        particles.push(new Particle(this.x, this.y, '#ef4444', 4)); 
-                        particles.push(new Particle(this.x, this.y, '#f97316', 3)); 
+                    // 觸發爆發塔圖片爆炸特效
+                    explosions.push(new ExplosionEffect(this.x, this.y, 'fire', 80, 0.35));
+                    
+                    for (let i = 0; i < 10; i++) {
+                        particles.push(new Particle(this.x, this.y, '#ef4444', 3)); 
                     }
                     
                     enemies.forEach(e => {
@@ -761,9 +835,11 @@
                     const slowRadius = 90; 
                     const slowDuration = 2.5; 
                     
+                    // 觸發冰霜塔圖片爆炸特效
+                    explosions.push(new ExplosionEffect(this.x, this.y, 'ice', 90, 0.35));
+                    
                     for (let i = 0; i < 10; i++) {
-                        particles.push(new Particle(this.x, this.y, '#60a5fa', 3)); 
-                        particles.push(new Particle(this.x, this.y, '#93c5fd', 2)); 
+                        particles.push(new Particle(this.x, this.y, '#60a5fa', 2)); 
                     }
                     
                     enemies.forEach(e => {
@@ -775,17 +851,16 @@
                     });
                 }
                 else if (this.type === 'missile') {
-                    // 導彈塔全面修改為：超大範圍高能高爆衝擊波！
-                    const splashRadius = 100; // 比爆發塔更寬廣的殺傷範圍
+                    const splashRadius = 100; 
                     
-                    // 產生更大規模的高能量紫色與白色高亮粒子群
-                    for (let i = 0; i < 25; i++) {
-                        particles.push(new Particle(this.x, this.y, '#c084fc', 5)); // 紫色
-                        particles.push(new Particle(this.x, this.y, '#a855f7', 3)); // 深紫
-                        particles.push(new Particle(this.x, this.y, '#ffffff', 2)); // 白色高亮
+                    // 💥 觸發導彈專屬「大範圍高爆特效圖片」
+                    explosions.push(new ExplosionEffect(this.x, this.y, 'missile', 130, 0.45));
+
+                    for (let i = 0; i < 15; i++) {
+                        particles.push(new Particle(this.x, this.y, '#c084fc', 4));
+                        particles.push(new Particle(this.x, this.y, '#ffffff', 2));
                     }
 
-                    // 對範圍內的所有怪物造成同等的滿額巨大傷害！
                     enemies.forEach(e => {
                         let d = Math.hypot(e.x - this.x, e.y - this.y);
                         if (d <= splashRadius) {
@@ -796,15 +871,18 @@
             }
             
             draw(ctx) {
-                const color = TOWER_TYPES[this.type].projectileColor;
-                ctx.beginPath();
-                if (this.type === 'missile') {
-                    ctx.arc(this.x, this.y, 7, 0, Math.PI * 2);
+                // 如果該類型的子彈圖示已載入，直接使用圖片繪製
+                if (IMAGES[this.type] && IMAGES[this.type].loaded) {
+                    let size = this.type === 'missile' ? 24 : 16;
+                    ctx.drawImage(IMAGES[this.type].img, this.x - size/2, this.y - size/2, size, size);
                 } else {
-                    ctx.arc(this.x, this.y, this.type === 'fire' ? 6 : 4, 0, Math.PI * 2);
+                    // Fallback 傳統子彈圓形
+                    const color = TOWER_TYPES[this.type].projectileColor;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.type === 'missile' ? 6 : 4, 0, Math.PI * 2);
+                    ctx.fillStyle = color; ctx.fill();
+                    ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.fill(); ctx.shadowBlur = 0;
                 }
-                ctx.fillStyle = color; ctx.fill();
-                ctx.shadowBlur = 12; ctx.shadowColor = color; ctx.fill(); ctx.shadowBlur = 0;
             }
         }
 
@@ -922,7 +1000,13 @@
                     showDialogue(`成功防守！獲得資金補給。\n下一波將在 ${waveTimer} 秒後到達。`, 3000);
                 }
             }
-            towers.forEach(t => t.update(dt)); projectiles.forEach(p => p.update(dt)); particles.forEach(p => p.update(dt));
+            
+            // 系統更新
+            towers.forEach(t => t.update(dt)); 
+            projectiles.forEach(p => p.update(dt)); 
+            particles.forEach(p => p.update(dt));
+            explosions.forEach(exp => exp.update(dt)); // 更新圖片爆炸
+
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i]; e.update(dt);
                 if (e.pathIndex >= pathCoords.length - 1) { gameOver(); return; }
@@ -932,7 +1016,11 @@
                     enemies.splice(i, 1);
                 }
             }
-            projectiles = projectiles.filter(p => p.active); particles = particles.filter(p => p.life > 0);
+
+            // 過濾已失效的實體
+            projectiles = projectiles.filter(p => p.active); 
+            particles = particles.filter(p => p.life > 0);
+            explosions = explosions.filter(exp => exp.life > 0);
         }
 
         function draw() {
@@ -949,8 +1037,13 @@
             }
             ctx.font = "32px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
             ctx.fillText("🏰", BASE_POS.x * CELL_SIZE + CELL_SIZE/2, BASE_POS.y * CELL_SIZE + CELL_SIZE/2);
-            towers.forEach(t => t.draw(ctx)); enemies.forEach(e => e.draw(ctx));
-            projectiles.forEach(p => p.draw(ctx)); particles.forEach(p => p.draw(ctx));
+            
+            // 依序繪製防禦塔、敵人、子彈、粒子與圖片爆炸特效
+            towers.forEach(t => t.draw(ctx)); 
+            enemies.forEach(e => e.draw(ctx));
+            projectiles.forEach(p => p.draw(ctx)); 
+            particles.forEach(p => p.draw(ctx));
+            explosions.forEach(exp => exp.draw(ctx)); // 繪製爆炸效果
 
             ctx.strokeStyle = "white"; ctx.lineWidth = 2;
             ctx.strokeRect(cursorX * CELL_SIZE, cursorY * CELL_SIZE, CELL_SIZE, CELL_SIZE);
