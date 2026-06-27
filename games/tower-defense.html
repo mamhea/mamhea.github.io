@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <!-- Google tag (gtag.js) -->
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-05B58NYFDP"></script>
-	<script>
- 		window.dataLayer = window.dataLayer || [];
-  		function gtag(){dataLayer.push(arguments);}
-  		gtag('js', new Date());
-		gtag('config', 'G-05B58NYFDP');
-		</script>
+	<!-- Google tag (gtag.js) -->
+ <script async src="https://www.googletagmanager.com/gtag/js?id=G-05B58NYFDP"></script>
+ <script>
+   window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+  gtag('config', 'G-05B58NYFDP');
+  </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>全名星塔房 - 導彈防衛與倍速版</title>
@@ -89,7 +89,7 @@
             </div>
 
             <div class="text-gray-400 mb-6 font-medium text-xs">
-                作者：<span class="text-white">陳品勳</span> &bull; 圖像進化版
+                作者：<span class="text-white">陳品勳</span> &bull; 全圖像化進化版
             </div>
 
             <button id="btn-start" class="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white font-bold text-xl rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
@@ -202,13 +202,19 @@
         const COLS = canvas.width / CELL_SIZE; 
         const ROWS = canvas.height / CELL_SIZE; 
 
-        // 圖片資源管理
+        // 圖片資源管理 (新增5種怪物圖片)
         const IMAGES = {
             star: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2JJIGrsp6DdisAFFmHQbd7iFnUzKHKNoteOLOqPc8_g&s=10', loaded: false, img: new Image() },
             fire: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVyyTC4QFjgzLIe6K8r6SS5p1mBSVsV6niXK-XhEJCvw&s=10', loaded: false, img: new Image() },
             ice: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbtuFsdFoa5HPqCJqufn1mAHn5u2szpvLMu7J02d2-6g&s=10', loaded: false, img: new Image() },
             missile: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSi61KtUvUjpLDa1uh6E-TyUHkQGkGv1RmWJCIl7QRLNA&s=10', loaded: false, img: new Image() },
-            missileExplosion: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXODQT34AeMjN2d1oTToNmvit6eQ5adeD6qWDGBlcDtA&s=10', loaded: false, img: new Image() }
+            missileExplosion: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXODQT34AeMjN2d1oTToNmvit6eQ5adeD6qWDGBlcDtA&s=10', loaded: false, img: new Image() },
+            // 5種怪物圖片資源
+            enemy_alien: { src: 'https://thf.bing.com/th/id/OIP.AP_FxNK2u1C31X5lFcWTwwHaHa?w=192&h=192&c=7&r=0&o=7&cb=thfc1falcon3&pid=1.7&rm=3', loaded: false, img: new Image() },
+            enemy_ogre: { src: 'https://www.bing.com/th/id/OIP.xutXfTYVuF7rdY8CW7LbdAHaHa?w=193&h=193&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2', loaded: false, img: new Image() },
+            enemy_tengu: { src: 'https://www.bing.com/th/id/OIP.FGSkeiB2lYazE3Dr0f6yZQAAAA?w=193&h=194&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2', loaded: false, img: new Image() },
+            enemy_ghost: { src: 'https://www.bing.com/th/id/OIP.PT_zCCmRQ16OwpnbhWdF4wHaHa?w=193&h=193&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2', loaded: false, img: new Image() },
+            enemy_skull: { src: 'https://www.bing.com/th/id/OIP.hJZqKZrD2d62GjLq3cztMwHaHa?w=193&h=193&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2', loaded: false, img: new Image() }
         };
 
         // 預先載入所有圖片資源
@@ -235,7 +241,7 @@
         let towers = [];
         let projectiles = [];
         let particles = [];
-        let explosions = []; // 新增爆炸效果陣列
+        let explosions = []; 
         
         let enemySpawnCount = 0;
         let enemiesToSpawn = 0;
@@ -256,7 +262,7 @@
         const TOWER_TYPES = {
             star: {
                 emoji: '⭐', name: '明星塔', cost: 50, color: '#fef08a', projectileColor: '#fbbf24',
-                baseDmg: 3, baseRange: 120, baseCooldown: 0.1, // 10倍極速機關槍
+                baseDmg: 3, baseRange: 120, baseCooldown: 0.1, 
                 desc: "⚡極速機關槍！超頻射擊",
                 upgrades: [
                     { cost: 40, dmg: 5, range: 130 },   
@@ -604,9 +610,13 @@
                 const diffMult = difficultyConfig[difficulty].hpMult;
                 this.maxHp = (30 + (wave * 30 * hpMultiplier)) * diffMult;
                 this.hp = this.maxHp;
+                this.size = hpMultiplier > 1 ? 18 : 14; 
                 
                 this.reward = (difficulty === 'easy' ? 12 : (difficulty === 'hard' ? 8 : 10)) + Math.floor(wave / 2);
-                this.emoji = ['👾', '👹', '👺', '👻', '💀'][Math.min(Math.floor((wave-1)/2), 4)];
+                
+                const waveIndex = Math.min(Math.floor((wave - 1) / 2), 4);
+                this.imageKey = ['enemy_alien', 'enemy_ogre', 'enemy_tengu', 'enemy_ghost', 'enemy_skull'][waveIndex];
+                this.emoji = ['👾', '👹', '👺', '👻', '💀'][waveIndex];
                 
                 this.slowTimer = 0;
                 this.burnTimer = 0;
@@ -656,19 +666,28 @@
                 }
             }
             draw(ctx) {
-                ctx.font = "24px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                ctx.fillText(this.emoji, this.x, this.y);
+                if (IMAGES[this.imageKey] && IMAGES[this.imageKey].loaded) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(IMAGES[this.imageKey].img, this.x - this.size, this.y - this.size, this.size * 2, this.size * 2);
+                    ctx.restore();
+                } else {
+                    ctx.font = `${this.size * 1.8}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+                    ctx.fillText(this.emoji, this.x, this.y);
+                }
                 
                 if (this.slowTimer > 0) {
                     ctx.fillStyle = "rgba(147, 197, 253, 0.4)"; 
                     ctx.beginPath(); 
-                    ctx.arc(this.x, this.y, 16, 0, Math.PI*2); 
+                    ctx.arc(this.x, this.y, this.size + 2, 0, Math.PI*2); 
                     ctx.fill();
                 }
                 if (this.burnTimer > 0) {
                     ctx.fillStyle = "rgba(249, 115, 22, 0.35)"; 
                     ctx.beginPath(); 
-                    ctx.arc(this.x, this.y, 15, 0, Math.PI*2); 
+                    ctx.arc(this.x, this.y, this.size + 1, 0, Math.PI*2); 
                     ctx.fill();
                 }
 
@@ -704,7 +723,6 @@
                 const typeData = TOWER_TYPES[this.type];
                 const maxLevel = typeData.upgrades.length + 1;
                 
-                // 1. 繪製底部圓形
                 ctx.beginPath(); ctx.arc(this.x, this.y, 18, 0, Math.PI * 2);
                 
                 if (this.level === maxLevel) {
@@ -715,24 +733,21 @@
                     ctx.fillStyle = "rgba(192,192,192,0.6)"; 
                     ctx.shadowBlur = 0;
                 } else {
-                    // 基礎圓形底色：對應各自防禦塔的主體色調
-                    ctx.fillStyle = typeData.color + "99"; // 透明度 60%
+                    ctx.fillStyle = typeData.color + "99"; 
                     ctx.shadowBlur = 0;
                 }
                 ctx.fill();
                 ctx.shadowBlur = 0; 
 
-                // 2. 圓形邊框，加強立體感
                 ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
                 ctx.lineWidth = 2;
                 ctx.stroke();
                 
-                // 3. 在圓形底色上方蓋上圖片 (若圖片載入失敗，會 fallback 顯示原 emoji 符號)
                 if (IMAGES[this.type] && IMAGES[this.type].loaded) {
                     ctx.save();
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, 16, 0, Math.PI * 2);
-                    ctx.clip(); // 限制圖片在圓形內
+                    ctx.clip(); 
                     ctx.drawImage(IMAGES[this.type].img, this.x - 16, this.y - 16, 32, 32);
                     ctx.restore();
                 } else {
@@ -740,7 +755,6 @@
                     ctx.fillText(typeData.emoji, this.x, this.y);
                 }
                 
-                // 4. 顯示等級文字
                 if (this.level > 1) {
                     ctx.fillStyle = this.level === maxLevel ? "#fde047" : "white"; 
                     ctx.font = "bold 11px Arial"; 
@@ -752,7 +766,6 @@
             }
         }
 
-        // 新增：獨立的爆炸效果類別，能完美展現大範圍高爆特效圖片
         class ExplosionEffect {
             constructor(x, y, type, size = 80, duration = 0.4) {
                 this.x = x;
@@ -768,16 +781,15 @@
             draw(ctx) {
                 ctx.save();
                 ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
-                let currentScaleSize = this.size * (1.2 - (this.life / this.maxLife) * 0.4); // 產生逐漸擴散的效果
+                let currentScaleSize = this.size * (1.2 - (this.life / this.maxLife) * 0.4); 
 
-                let imgKey = 'missileExplosion'; // 預設使用導彈爆炸
+                let imgKey = 'missileExplosion'; 
                 if (this.type === 'fire') imgKey = 'fire';
                 if (this.type === 'ice') imgKey = 'ice';
 
                 if (IMAGES[imgKey] && IMAGES[imgKey].loaded) {
                     ctx.drawImage(IMAGES[imgKey].img, this.x - currentScaleSize/2, this.y - currentScaleSize/2, currentScaleSize, currentScaleSize);
                 } else {
-                    // Fallback 幾何圖形
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, currentScaleSize/2, 0, Math.PI * 2);
                     ctx.fillStyle = this.type === 'ice' ? "rgba(147, 197, 253, 0.5)" : "rgba(239, 68, 68, 0.6)";
@@ -824,7 +836,6 @@
                     const burnDuration = 3.0; 
                     const burnDmgPerSec = this.damage * 0.35; 
                     
-                    // 觸發爆發塔圖片爆炸特效
                     explosions.push(new ExplosionEffect(this.x, this.y, 'fire', 80, 0.35));
                     
                     for (let i = 0; i < 10; i++) {
@@ -843,7 +854,6 @@
                     const slowRadius = 90; 
                     const slowDuration = 2.5; 
                     
-                    // 觸發冰霜塔圖片爆炸特效
                     explosions.push(new ExplosionEffect(this.x, this.y, 'ice', 90, 0.35));
                     
                     for (let i = 0; i < 10; i++) {
@@ -852,7 +862,7 @@
                     
                     enemies.forEach(e => {
                         let d = Math.hypot(e.x - this.x, e.y - this.y);
-                        if (d <= slowRadius) {
+                        if (d <= slowRadius) { // 修正處：這裡原本誤寫為 splashRadius，已修正為 slowRadius
                             e.hp -= this.damage; 
                             e.applySlow(slowDuration); 
                         }
@@ -861,7 +871,6 @@
                 else if (this.type === 'missile') {
                     const splashRadius = 100; 
                     
-                    // 💥 觸發導彈專屬「大範圍高爆特效圖片」
                     explosions.push(new ExplosionEffect(this.x, this.y, 'missile', 130, 0.45));
 
                     for (let i = 0; i < 15; i++) {
@@ -879,12 +888,10 @@
             }
             
             draw(ctx) {
-                // 如果該類型的子彈圖示已載入，直接使用圖片繪製
                 if (IMAGES[this.type] && IMAGES[this.type].loaded) {
                     let size = this.type === 'missile' ? 24 : 16;
                     ctx.drawImage(IMAGES[this.type].img, this.x - size/2, this.y - size/2, size, size);
                 } else {
-                    // Fallback 傳統子彈圓形
                     const color = TOWER_TYPES[this.type].projectileColor;
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.type === 'missile' ? 6 : 4, 0, Math.PI * 2);
@@ -1009,11 +1016,10 @@
                 }
             }
             
-            // 系統更新
             towers.forEach(t => t.update(dt)); 
             projectiles.forEach(p => p.update(dt)); 
             particles.forEach(p => p.update(dt));
-            explosions.forEach(exp => exp.update(dt)); // 更新圖片爆炸
+            explosions.forEach(exp => exp.update(dt)); 
 
             for (let i = enemies.length - 1; i >= 0; i--) {
                 let e = enemies[i]; e.update(dt);
@@ -1025,7 +1031,6 @@
                 }
             }
 
-            // 過濾已失效的實體
             projectiles = projectiles.filter(p => p.active); 
             particles = particles.filter(p => p.life > 0);
             explosions = explosions.filter(exp => exp.life > 0);
@@ -1046,12 +1051,11 @@
             ctx.font = "32px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
             ctx.fillText("🏰", BASE_POS.x * CELL_SIZE + CELL_SIZE/2, BASE_POS.y * CELL_SIZE + CELL_SIZE/2);
             
-            // 依序繪製防禦塔、敵人、子彈、粒子與圖片爆炸特效
             towers.forEach(t => t.draw(ctx)); 
             enemies.forEach(e => e.draw(ctx));
             projectiles.forEach(p => p.draw(ctx)); 
             particles.forEach(p => p.draw(ctx));
-            explosions.forEach(exp => exp.draw(ctx)); // 繪製爆炸效果
+            explosions.forEach(exp => exp.draw(ctx)); 
 
             ctx.strokeStyle = "white"; ctx.lineWidth = 2;
             ctx.strokeRect(cursorX * CELL_SIZE, cursorY * CELL_SIZE, CELL_SIZE, CELL_SIZE);
