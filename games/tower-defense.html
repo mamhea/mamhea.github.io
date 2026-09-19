@@ -1,1100 +1,1554 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-	<!-- Google tag (gtag.js) -->
- <script async src="https://www.googletagmanager.com/gtag/js?id=G-05B58NYFDP"></script>
- <script>
-   window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-  gtag('config', 'G-05B58NYFDP');
-  </script>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全名星塔房 - 導彈防衛與倍速版</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
-        body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: #1a202c;
-            color: white;
-            user-select: none;
-            overflow: hidden;
-        }
-        #game-container {
-            image-rendering: pixelated;
-        }
-        canvas {
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            border-radius: 0.5rem;
-            max-width: 100%;
-            height: auto;
-            background-color: #4ade80;
-        }
-        .dialogue-box {
-            background: rgba(0, 0, 0, 0.9);
-            border: 2px solid #cbd5e1;
-            border-radius: 8px;
-            padding: 1rem;
-            text-shadow: 1px 1px 2px black;
-        }
-        ::-webkit-scrollbar { display: none; }
-        
-        #build-menu, #upgrade-menu {
-            position: absolute;
-            transform: translate(-50%, -100%);
-            margin-top: -10px;
-            pointer-events: auto;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>全明星塔防</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+body{font-family:'Noto Sans TC',sans-serif;background-color:#0f172a;color:white;user-select:none;overflow:hidden;touch-action:none;}
+.game-wrapper{position:relative;width:100%;max-width:800px;max-height:72vh;aspect-ratio:4/3;margin:0 auto;}
+canvas{box-shadow:0 10px 25px rgba(0,0,0,0.5);border-radius:0.5rem;width:100%;height:100%;object-fit:contain;background-color:#1e293b;}
+.dialogue-box{background:rgba(15,23,42,0.95);border:2px solid #3b82f6;border-radius:8px;padding:1rem;text-shadow:1px 1px 2px black;}
+::-webkit-scrollbar{display:none;}
+#build-menu,#upgrade-menu{position:absolute;transform:translate(-50%,-100%);margin-top:-10px;pointer-events:auto;}
+.card-container{perspective:1000px;}
+.card-inner{transition:transform 0.6s;transform-style:preserve-3d;}
+.card-flipped{transform:rotateY(180deg);}
+.card-front,.card-back{backface-visibility:hidden;position:absolute;inset:0;}
+.card-back{transform:rotateY(180deg);}
+@keyframes achieveSlideIn{0%{transform:translateX(120%);opacity:0;}15%{transform:translateX(0);opacity:1;}85%{transform:translateX(0);opacity:1;}100%{transform:translateX(120%);opacity:0;}}
+.achieve-toast{animation:achieveSlideIn 4.2s ease-in-out forwards;}
+@keyframes achieveGlow{0%,100%{box-shadow:0 0 8px rgba(250,204,21,0.6);}50%{box-shadow:0 0 20px rgba(250,204,21,1);}}
+.achieve-unlocked{animation:achieveGlow 2s infinite;}
+@keyframes skillGlow{0%,100%{box-shadow:0 0 10px rgba(139,92,246,0.7);}50%{box-shadow:0 0 20px rgba(139,92,246,1);}}
+.skill-unlocked{animation:skillGlow 2.4s infinite;}
+@keyframes legendaryGlow{0%,100%{box-shadow:0 0 15px rgba(251,191,36,0.8),0 0 30px rgba(251,146,60,0.4);}50%{box-shadow:0 0 30px rgba(251,191,36,1),0 0 60px rgba(251,146,60,0.8);}}
+.legendary-unlocked{animation:legendaryGlow 2s infinite;}
+@keyframes legendaryPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.02);}}
+.legendary-available{animation:legendaryPulse 1.8s infinite;}
+</style>
 </head>
 <body class="w-screen h-screen flex items-center justify-center relative">
 
-    <!-- 遊戲首頁 -->
-    <div id="home-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 z-50 transition-opacity duration-500">
-        <div class="bg-gray-800 p-8 rounded-2xl shadow-2xl text-center max-w-lg border border-gray-700">
-            <h1 class="text-5xl font-black text-yellow-400 mb-4 drop-shadow-lg tracking-wider">全名星塔房</h1>
-            
-            <div class="bg-gray-700 p-5 rounded-xl mb-5 text-left border border-gray-600">
-                <h2 class="text-lg font-bold text-blue-300 mb-2 border-b border-gray-500 pb-1">遊戲玩法與單位介紹</h2>
-                <div class="text-gray-200 leading-relaxed text-sm mb-2 space-y-1">
-                    <p>在地圖上放上你的角色，阻止敵人進入我方基地。</p>
-                    <p><strong>⭐ 明星塔：</strong> <span class="text-yellow-400 font-bold">⚡極速射擊！</span>10倍射速機關槍。</p>
-                    <p><strong>🔥 爆發塔：</strong> 造成 <span class="text-red-400 font-bold">💥 範圍爆炸</span>，並附帶 <span class="text-orange-400 font-bold">🔥 燃燒 (DoT)</span>！</p>
-                    <p><strong>❄️ 冰霜塔：</strong> 造成 <span class="text-blue-300 font-bold">❄️ 範圍緩速</span>，限制敵人移動。</p>
-                    <p><strong>🚀 導彈塔：</strong> <span class="text-purple-400 font-bold">🆕 超遠射程、💥 範圍毀滅傷害</span>，但裝填時間長！</p>
-                    <p class="text-red-400 font-bold mt-2">⚠️ 一旦有一隻敵人進了基地，你就輸了！</p>
-                </div>
-                <div class="pt-2 border-t border-gray-500 text-xs text-gray-300">
-                    <p>🕹️ <strong>操作方式：</strong> WASD 移動遊標，空白鍵互動；也支援滑鼠直接點擊！</p>
-                </div>
-            </div>
-
-            <!-- 難度選擇區 -->
-            <div class="mb-6">
-                <label class="block text-gray-300 text-sm font-bold mb-3">🛡️ 選擇挑戰難度：</label>
-                <div class="flex justify-center gap-3">
-                    <button id="diff-easy" onclick="setDifficulty('easy')" class="px-4 py-2 rounded-xl border-2 border-green-500 bg-green-950/40 text-green-400 font-bold transition-all hover:bg-green-500/20">
-                        🟢 簡單
-                    </button>
-                    <button id="diff-normal" onclick="setDifficulty('normal')" class="px-4 py-2 rounded-xl border-2 border-yellow-500 bg-yellow-500 text-gray-900 font-bold transition-all">
-                        🟡 普通
-                    </button>
-                    <button id="diff-hard" onclick="setDifficulty('hard')" class="px-4 py-2 rounded-xl border-2 border-red-500 bg-red-950/40 text-red-400 font-bold transition-all hover:bg-red-500/20">
-                        🔴 困難
-                    </button>
-                </div>
-                <p id="diff-desc" class="text-xs text-gray-400 mt-2 h-4">起始金幣 $150，怪物血量正常 (100%)</p>
-            </div>
-
-            <div class="text-gray-400 mb-6 font-medium text-xs">
-                作者：<span class="text-white">陳柏翰</span> &bull; 全圖像化進化版
-            </div>
-
-            <button id="btn-start" class="px-8 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white font-bold text-xl rounded-full shadow-lg transform transition hover:scale-105 active:scale-95">
-                開始遊戲
-            </button>
-        </div>
-    </div>
-
-    <!-- 遊戲區域 -->
-    <div id="game-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center w-full h-full bg-gray-900">
-        <!-- 頂部資訊列 -->
-        <div class="w-full max-w-[800px] flex justify-between items-end mb-2 px-2">
-            <div class="text-2xl font-bold text-white drop-shadow-md flex items-center gap-3">
-                <span>🌊 波數: <span id="ui-wave" class="text-blue-400">1</span></span>
-                <span id="ui-diff-tag" class="text-xs px-2 py-0.5 rounded-full font-bold">普通</span>
-            </div>
-            
-            <!-- 時間流速控制器 -->
-            <div class="flex items-center gap-2 bg-gray-800 px-3 py-1 rounded-lg border border-gray-700 shadow-lg">
-                <span class="text-xs text-gray-400 font-bold">⚡ 速度:</span>
-                <button id="speed-1x" onclick="setGameSpeed(1)" class="px-2.5 py-0.5 text-xs font-bold rounded bg-blue-600 text-white transition-all shadow-sm">1x</button>
-                <button id="speed-2x" onclick="setGameSpeed(2)" class="px-2.5 py-0.5 text-xs font-bold rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all">2x</button>
-                <button id="speed-3x" onclick="setGameSpeed(3)" class="px-2.5 py-0.5 text-xs font-bold rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all">3x</button>
-            </div>
-
-            <div class="text-2xl font-bold text-white drop-shadow-md flex items-center gap-4">
-                <span>💰 金幣: <span id="ui-gold" class="text-yellow-400">150</span></span>
-            </div>
-        </div>
-
-        <div class="relative w-[800px] h-[600px]" id="game-area-wrapper">
-            <canvas id="gameCanvas" width="800" height="600" class="absolute inset-0"></canvas>
-            
-            <!-- 建造選單 -->
-            <div id="build-menu" class="hidden flex gap-2 bg-gray-800 p-2 rounded-lg border border-gray-600 shadow-xl z-20 opacity-95 hover:opacity-100 transition-opacity">
-                <button class="menu-btn hover:bg-gray-700 p-2 rounded flex flex-col items-center" data-type="star">
-                    <span class="text-2xl">⭐</span>
-                    <span class="text-xs text-yellow-300 mt-1">明星塔</span>
-                    <span class="text-[10px] text-gray-400">(10倍極速)</span>
-                    <span class="text-xs text-white font-bold mt-1">$50</span>
-                </button>
-                <button class="menu-btn hover:bg-gray-700 p-2 rounded flex flex-col items-center" data-type="fire">
-                    <span class="text-2xl">🔥</span>
-                    <span class="text-xs text-red-400 mt-1">爆發塔</span>
-                    <span class="text-[10px] text-gray-400">(AOE+燃燒)</span>
-                    <span class="text-xs text-white font-bold mt-1">$80</span>
-                </button>
-                <button class="menu-btn hover:bg-gray-700 p-2 rounded flex flex-col items-center" data-type="ice">
-                    <span class="text-2xl">❄️</span>
-                    <span class="text-xs text-blue-300 mt-1">冰霜塔</span>
-                    <span class="text-[10px] text-gray-400">(範圍緩速)</span>
-                    <span class="text-xs text-white font-bold mt-1">$70</span>
-                </button>
-                <button class="menu-btn hover:bg-gray-700 p-2 rounded flex flex-col items-center" data-type="missile">
-                    <span class="text-2xl">🚀</span>
-                    <span class="text-xs text-purple-400 mt-1">導彈塔</span>
-                    <span class="text-[10px] text-gray-400">(極遠範圍高傷)</span>
-                    <span class="text-xs text-white font-bold mt-1">$120</span>
-                </button>
-                <button id="btn-cancel-build" class="hover:bg-red-900/50 p-2 rounded flex flex-col items-center justify-center text-gray-400">
-                    <span class="text-sm">❌</span>
-                    <span class="text-xs mt-1">取消</span>
-                </button>
-            </div>
-
-            <!-- 升級選單 -->
-            <div id="upgrade-menu" class="hidden flex flex-col gap-2 bg-gray-800 p-3 rounded-lg border border-gray-600 shadow-xl z-20 min-w-[150px] opacity-95 hover:opacity-100 transition-opacity">
-                <div class="text-center font-bold text-sm border-b border-gray-600 pb-1 mb-1 text-white" id="upgrade-title">塔資訊</div>
-                <div class="text-xs text-gray-300 mb-2 leading-relaxed">
-                    等級: <span id="upg-level" class="text-white">1</span>/<span id="upg-max-level">4</span><br>
-                    攻擊: <span id="upg-dmg" class="text-white">10</span><br>
-                    射程: <span id="upg-range" class="text-white">100</span><br>
-                    <span id="upg-effect-desc" class="text-yellow-400 font-semibold"></span>
-                </div>
-                <button id="btn-do-upgrade" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-2 rounded text-sm w-full transition">
-                    升級 ($<span id="upg-cost">50</span>)
-                </button>
-                <button id="btn-do-sell" class="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-2 rounded text-sm w-full transition mt-1">
-                    出售 (+$<span id="sell-value">25</span>)
-                </button>
-                <button id="btn-cancel-upgrade" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-2 rounded text-sm w-full transition mt-1">
-                    取消
-                </button>
-            </div>
-
-            <!-- 對話框 -->
-            <div id="dialogue-container" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-11/12 max-w-[700px] dialogue-box hidden transition-opacity duration-300 z-10 pointer-events-none">
-                <p id="dialogue-text" class="text-xl text-white font-bold"></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- 結束畫面 -->
-    <div id="gameover-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-90 z-50 backdrop-blur-sm">
-        <div class="text-center transform transition-all scale-110">
-            <h1 class="text-6xl font-black text-red-500 mb-4 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">基地被攻破了！</h1>
-            <p class="text-2xl text-gray-200 mb-8">您在 [<span id="final-diff" class="text-blue-400 font-bold">普通</span>] 難度成功抵擋了 <span id="final-wave" class="text-yellow-400 font-bold text-4xl">5</span> 波敵人的攻勢。</p>
-            
-            <button id="btn-home" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xl rounded-lg shadow-lg transform transition hover:scale-105 active:scale-95 flex items-center justify-center gap-2 mx-auto">
-                <span>🌀</span> 傳送到大廳
-            </button>
-        </div>
-    </div>
-
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const wrapper = document.getElementById('game-area-wrapper');
-        const CELL_SIZE = 40;
-        const COLS = canvas.width / CELL_SIZE; 
-        const ROWS = canvas.height / CELL_SIZE; 
-
-        // 圖片資源管理 (新增5種怪物圖片)
-        const IMAGES = {
-            star: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ2JJIGrsp6DdisAFFmHQbd7iFnUzKHKNoteOLOqPc8_g&s=10', loaded: false, img: new Image() },
-            fire: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVyyTC4QFjgzLIe6K8r6SS5p1mBSVsV6niXK-XhEJCvw&s=10', loaded: false, img: new Image() },
-            ice: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRbtuFsdFoa5HPqCJqufn1mAHn5u2szpvLMu7J02d2-6g&s=10', loaded: false, img: new Image() },
-            missile: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSi61KtUvUjpLDa1uh6E-TyUHkQGkGv1RmWJCIl7QRLNA&s=10', loaded: false, img: new Image() },
-            missileExplosion: { src: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQXODQT34AeMjN2d1oTToNmvit6eQ5adeD6qWDGBlcDtA&s=10', loaded: false, img: new Image() },
-            // 5種怪物圖片資源
-            enemy_alien: { src: 'https://thf.bing.com/th/id/OIP.AP_FxNK2u1C31X5lFcWTwwHaHa?w=192&h=192&c=7&r=0&o=7&cb=thfc1falcon3&pid=1.7&rm=3', loaded: false, img: new Image() },
-            enemy_ogre: { src: 'https://www.bing.com/th/id/OIP.xutXfTYVuF7rdY8CW7LbdAHaHa?w=193&h=193&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2', loaded: false, img: new Image() },
-            enemy_tengu: { src: 'https://www.bing.com/th/id/OIP.FGSkeiB2lYazE3Dr0f6yZQAAAA?w=193&h=194&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2', loaded: false, img: new Image() },
-            enemy_ghost: { src: 'https://www.bing.com/th/id/OIP.PT_zCCmRQ16OwpnbhWdF4wHaHa?w=193&h=193&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2', loaded: false, img: new Image() },
-            enemy_skull: { src: 'https://www.bing.com/th/id/OIP.hJZqKZrD2d62GjLq3cztMwHaHa?w=193&h=193&c=8&rs=1&qlt=90&o=6&pid=3.1&rm=2', loaded: false, img: new Image() }
-        };
-
-        // 預先載入所有圖片資源
-        for (let key in IMAGES) {
-            IMAGES[key].img.src = IMAGES[key].src;
-            IMAGES[key].img.onload = () => { IMAGES[key].loaded = true; };
-        }
-
-        let gameState = 'home'; 
-        let animationId;
-        let lastTime = 0;
-
-        // 難度設定
-        let difficulty = 'normal';
-        let difficultyConfig = {
-            easy: { startGold: 200, hpMult: 0.75, waveReward: 40, label: '🟢 簡單', colorClass: 'bg-green-500 text-white' },
-            normal: { startGold: 150, hpMult: 1.00, waveReward: 30, label: '🟡 普通', colorClass: 'bg-yellow-500 text-gray-900' },
-            hard: { startGold: 100, hpMult: 1.30, waveReward: 20, label: '🔴 困難', colorClass: 'bg-red-500 text-white' }
-        };
-
-        let wave = 1;
-        let gold = 150;
-        let enemies = [];
-        let towers = [];
-        let projectiles = [];
-        let particles = [];
-        let explosions = []; 
-        
-        let enemySpawnCount = 0;
-        let enemiesToSpawn = 0;
-        let spawnTimer = 0;
-        let waveTimer = 0;
-        let isWaveActive = false;
-        
-        let cursorX = 10;
-        let cursorY = 7;
-        let activeMenu = null;
-        let menuGridX = -1;
-        let menuGridY = -1;
-        let selectedTower = null;
-
-        // 遊戲時間流速倍率
-        let gameSpeed = 1;
-
-        const TOWER_TYPES = {
-            star: {
-                emoji: '⭐', name: '明星塔', cost: 50, color: '#fef08a', projectileColor: '#fbbf24',
-                baseDmg: 3, baseRange: 120, baseCooldown: 0.1, 
-                desc: "⚡極速機關槍！超頻射擊",
-                upgrades: [
-                    { cost: 40, dmg: 5, range: 130 },   
-                    { cost: 80, dmg: 8, range: 150 },   
-                    { cost: 150, dmg: 15, range: 175 }  
-                ]
-            },
-            fire: {
-                emoji: '🔥', name: '爆發塔', cost: 80, color: '#f87171', projectileColor: '#ef4444',
-                baseDmg: 35, baseRange: 80, baseCooldown: 1.5,
-                desc: "💥 AOE爆炸 + 燃燒 DoT",
-                upgrades: [
-                    { cost: 60, dmg: 55, range: 90 }, 
-                    { cost: 120, dmg: 85, range: 100 },
-                    { cost: 200, dmg: 130, range: 110 }
-                ]
-            },
-            ice: {
-                emoji: '❄️', name: '冰霜塔', cost: 70, color: '#93c5fd', projectileColor: '#60a5fa',
-                baseDmg: 8, baseRange: 140, baseCooldown: 1.2,
-                desc: "❄️ 範圍緩速50%",
-                upgrades: [
-                    { cost: 50, dmg: 15, range: 160 }, 
-                    { cost: 100, dmg: 25, range: 180 },
-                    { cost: 180, dmg: 45, range: 200 }
-                ]
-            },
-            missile: {
-                emoji: '🚀', name: '導彈塔', cost: 120, color: '#c084fc', projectileColor: '#a855f7',
-                baseDmg: 75, baseRange: 220, baseCooldown: 3.0,
-                desc: "🚀 極遠射程，💥 超大範圍毀滅傷害", 
-                upgrades: [
-                    { cost: 90, dmg: 130, range: 240 }, 
-                    { cost: 160, dmg: 190, range: 260 },
-                    { cost: 250, dmg: 260, range: 280 }
-                ]
-            }
-        };
-
-        let mapGrid = [];
-        const pathCoords = [
-            {x: 0, y: 3}, {x: 1, y: 3}, {x: 2, y: 3}, {x: 3, y: 3}, {x: 4, y: 3}, {x: 5, y: 3},
-            {x: 5, y: 4}, {x: 5, y: 5}, {x: 5, y: 6}, {x: 6, y: 6}, {x: 7, y: 6}, {x: 8, y: 6},
-            {x: 9, y: 6}, {x: 10, y: 6}, {x: 10, y: 7}, {x: 10, y: 8}, {x: 10, y: 9}, {x: 10, y: 10},
-            {x: 9, y: 10}, {x: 8, y: 10}, {x: 7, y: 10}, {x: 6, y: 10}, {x: 5, y: 10}, {x: 4, y: 10},
-            {x: 3, y: 10}, {x: 2, y: 10}, {x: 2, y: 11}, {x: 2, y: 12}, {x: 2, y: 13}, {x: 3, y: 13},
-            {x: 4, y: 13}, {x: 5, y: 13}, {x: 6, y: 13}, {x: 7, y: 13}, {x: 8, y: 13}, {x: 9, y: 13},
-            {x: 10, y: 13}, {x: 11, y: 13}, {x: 12, y: 13}, {x: 13, y: 13}, {x: 14, y: 13}, {x: 15, y: 13},
-            {x: 16, y: 13}, {x: 17, y: 13}, {x: 18, y: 13}, {x: 19, y: 13}
-        ];
-        const BASE_POS = pathCoords[pathCoords.length - 1];
-
-        // 難度切換設定
-        function setDifficulty(level) {
-            difficulty = level;
-            const buttons = {
-                easy: document.getElementById('diff-easy'),
-                normal: document.getElementById('diff-normal'),
-                hard: document.getElementById('diff-hard')
-            };
-            const desc = document.getElementById('diff-desc');
-
-            buttons.easy.className = "px-4 py-2 rounded-xl border-2 border-green-500 bg-green-950/40 text-green-400 font-bold transition-all hover:bg-green-500/20";
-            buttons.normal.className = "px-4 py-2 rounded-xl border-2 border-yellow-500 bg-yellow-950/40 text-yellow-400 font-bold transition-all hover:bg-yellow-500/20";
-            buttons.hard.className = "px-4 py-2 rounded-xl border-2 border-red-500 bg-red-950/40 text-red-400 font-bold transition-all hover:bg-red-500/20";
-
-            if (level === 'easy') {
-                buttons.easy.className = "px-4 py-2 rounded-xl border-2 border-green-500 bg-green-500 text-gray-900 font-bold transition-all";
-                desc.innerText = "起始金幣 $200，怪物血量偏低 (75%)";
-            } else if (level === 'normal') {
-                buttons.normal.className = "px-4 py-2 rounded-xl border-2 border-yellow-500 bg-yellow-500 text-gray-900 font-bold transition-all";
-                desc.innerText = "起始金幣 $150，怪物血量正常 (100%)";
-            } else if (level === 'hard') {
-                buttons.hard.className = "px-4 py-2 rounded-xl border-2 border-red-500 bg-red-500 text-white font-bold transition-all";
-                desc.innerText = "起始金幣 $100，怪物血量偏高 (130%)，防守高難度！";
-            }
-        }
-
-        // 設置遊戲流速
-        function setGameSpeed(speed) {
-            gameSpeed = speed;
-            const btn1 = document.getElementById('speed-1x');
-            const btn2 = document.getElementById('speed-2x');
-            const btn3 = document.getElementById('speed-3x');
-
-            [btn1, btn2, btn3].forEach(btn => {
-                btn.className = "px-2.5 py-0.5 text-xs font-bold rounded bg-gray-700 text-gray-300 hover:bg-gray-600 transition-all";
-            });
-
-            if (speed === 1) btn1.className = "px-2.5 py-0.5 text-xs font-bold rounded bg-blue-600 text-white transition-all shadow-sm";
-            if (speed === 2) btn2.className = "px-2.5 py-0.5 text-xs font-bold rounded bg-yellow-500 text-gray-900 transition-all shadow-sm";
-            if (speed === 3) btn3.className = "px-2.5 py-0.5 text-xs font-bold rounded bg-red-500 text-white transition-all shadow-sm";
-        }
-
-        function initGrid() {
-            mapGrid = [];
-            for (let y = 0; y < ROWS; y++) {
-                let row = [];
-                for (let x = 0; x < COLS; x++) row.push(0);
-                mapGrid.push(row);
-            }
-            pathCoords.forEach(p => mapGrid[p.y][p.x] = 1);
-            mapGrid[BASE_POS.y][BASE_POS.x] = 3; 
-        }
-
-        function startGame() {
-            document.getElementById('home-screen').classList.add('hidden');
-            document.getElementById('gameover-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('hidden');
-            closeMenus();
-            
-            initGrid();
-            wave = 1;
-
-            const config = difficultyConfig[difficulty];
-            gold = config.startGold;
-            
-            const tag = document.getElementById('ui-diff-tag');
-            tag.innerText = config.label;
-            tag.className = `text-xs px-2 py-0.5 rounded-full font-bold ${config.colorClass}`;
-
-            enemies = [];
-            towers = [];
-            projectiles = [];
-            particles = [];
-            explosions = [];
-            isWaveActive = false;
-            waveTimer = 3; 
-            cursorX = 10; cursorY = 7;
-            
-            setGameSpeed(1);
-            updateUI();
-            showDialogue(`挑戰開始！難度：${config.label}\n點擊草地挑選你的防禦明星。`);
-            
-            gameState = 'playing';
-            lastTime = performance.now(); 
-            cancelAnimationFrame(animationId);
-            animationId = requestAnimationFrame(gameLoop);
-        }
-
-        function gameOver() {
-            gameState = 'gameover';
-            closeMenus();
-            document.getElementById('final-wave').innerText = wave;
-            document.getElementById('final-diff').innerText = difficultyConfig[difficulty].label;
-            document.getElementById('gameover-screen').classList.remove('hidden');
-        }
-
-        function returnToLobby() {
-            document.getElementById('gameover-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('home-screen').classList.remove('hidden');
-            gameState = 'home';
-            cancelAnimationFrame(animationId);
-            hideDialogue();
-            closeMenus();
-        }
-
-        const uiGold = document.getElementById('ui-gold');
-        const uiWave = document.getElementById('ui-wave');
-        const dialogueContainer = document.getElementById('dialogue-container');
-        const dialogueText = document.getElementById('dialogue-text');
-        const buildMenu = document.getElementById('build-menu');
-        const upgradeMenu = document.getElementById('upgrade-menu');
-        let dialogueTimeout;
-
-        function updateUI() {
-            uiGold.innerText = gold;
-            uiWave.innerText = wave;
-            if (activeMenu === 'upgrade' && selectedTower) updateUpgradeMenuUI();
-        }
-
-        function showDialogue(text, duration = 4000) {
-            dialogueText.innerHTML = text.replace('\n', '<br>');
-            dialogueContainer.classList.remove('hidden');
-            clearTimeout(dialogueTimeout);
-            if (duration < 999999) {
-                dialogueTimeout = setTimeout(hideDialogue, duration);
-            }
-        }
-
-        function hideDialogue() {
-            dialogueContainer.classList.add('hidden');
-        }
-
-        function openBuildMenu(x, y) {
-            closeMenus();
-            activeMenu = 'build';
-            menuGridX = x;
-            menuGridY = y;
-            const posX = (x * CELL_SIZE) + (CELL_SIZE / 2);
-            const posY = (y * CELL_SIZE);
-            buildMenu.style.left = `${posX}px`;
-            buildMenu.style.top = `${posY}px`;
-            buildMenu.classList.remove('hidden');
-        }
-
-        function openUpgradeMenu(tower) {
-            closeMenus();
-            activeMenu = 'upgrade';
-            selectedTower = tower;
-            menuGridX = tower.gridX;
-            menuGridY = tower.gridY;
-            const posX = (tower.gridX * CELL_SIZE) + (CELL_SIZE / 2);
-            const posY = (tower.gridY * CELL_SIZE);
-            upgradeMenu.style.left = `${posX}px`;
-            upgradeMenu.style.top = `${posY}px`;
-            upgradeMenu.classList.remove('hidden');
-            updateUpgradeMenuUI();
-        }
-        
-        function updateUpgradeMenuUI() {
-            if (!selectedTower) return;
-            const t = selectedTower;
-            const typeData = TOWER_TYPES[t.type];
-            const maxLevel = typeData.upgrades.length + 1; 
-            
-            document.getElementById('upgrade-title').innerText = `${typeData.name} Lv.${t.level}`;
-            document.getElementById('upg-level').innerText = t.level;
-            document.getElementById('upg-max-level').innerText = maxLevel;
-            document.getElementById('upg-dmg').innerText = t.damage;
-            document.getElementById('upg-range').innerText = t.range;
-            document.getElementById('upg-effect-desc').innerText = typeData.desc;
-            
-            let totalInvestment = typeData.cost;
-            for (let i = 0; i < t.level - 1; i++) {
-                totalInvestment += typeData.upgrades[i].cost;
-            }
-            const sellValue = Math.floor(totalInvestment * 0.5);
-            document.getElementById('sell-value').innerText = sellValue;
-            
-            const btn = document.getElementById('btn-do-upgrade');
-            if (t.level < maxLevel) {
-                const cost = typeData.upgrades[t.level - 1].cost;
-                btn.innerHTML = `升級 ($<span id="upg-cost">${cost}</span>)`;
-                btn.disabled = false;
-                if (gold < cost) {
-                    btn.classList.add('bg-gray-500', 'cursor-not-allowed');
-                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-500');
-                } else {
-                    btn.classList.remove('bg-gray-500', 'cursor-not-allowed');
-                    btn.classList.add('bg-blue-600', 'hover:bg-blue-500');
-                }
-            } else {
-                btn.innerHTML = `已滿級<span id="upg-cost" class="hidden"></span>`;
-                btn.disabled = true;
-                btn.classList.add('bg-gray-500', 'cursor-not-allowed');
-                btn.classList.remove('bg-blue-600', 'hover:bg-blue-500');
-            }
-        }
-
-        function closeMenus() {
-            buildMenu.classList.add('hidden');
-            upgradeMenu.classList.add('hidden');
-            activeMenu = null;
-            selectedTower = null;
-        }
-
-        function tryBuild(typeKey) {
-            if (activeMenu !== 'build' || gameState !== 'playing') return;
-            const typeData = TOWER_TYPES[typeKey];
-            if (gold >= typeData.cost) {
-                gold -= typeData.cost;
-                towers.push(new Tower(menuGridX, menuGridY, typeKey));
-                mapGrid[menuGridY][menuGridX] = 2; 
-                updateUI();
-                closeMenus();
-            } else {
-                showDialogue(`金幣不足！需要 ${typeData.cost} 金幣。`, 2000);
-            }
-        }
-
-        function tryUpgrade() {
-            if (activeMenu !== 'upgrade' || !selectedTower || gameState !== 'playing') return;
-            const t = selectedTower;
-            const typeData = TOWER_TYPES[t.type];
-            const maxLevel = typeData.upgrades.length + 1;
-            
-            if (t.level < maxLevel) {
-                const upgradeData = typeData.upgrades[t.level - 1];
-                if (gold >= upgradeData.cost) {
-                    gold -= upgradeData.cost;
-                    t.level++;
-                    t.damage = upgradeData.dmg;
-                    t.range = upgradeData.range;
-                    updateUI();
-                    for(let i=0; i<10; i++) particles.push(new Particle(t.x, t.y, '#3b82f6', 4));
-                    
-                    if (t.level === maxLevel) {
-                        showDialogue(`太棒了！${typeData.name} 已達到最高等級！`, 2000);
-                        closeMenus();
-                    } else {
-                        updateUpgradeMenuUI();
-                    }
-                } else {
-                    showDialogue("金幣不足以升級！", 2000);
-                }
-            }
-        }
-
-        function trySell() {
-            if (activeMenu !== 'upgrade' || !selectedTower || gameState !== 'playing') return;
-            const t = selectedTower;
-            const typeData = TOWER_TYPES[t.type];
-            
-            let totalInvestment = typeData.cost;
-            for (let i = 0; i < t.level - 1; i++) {
-                totalInvestment += typeData.upgrades[i].cost;
-            }
-            const sellValue = Math.floor(totalInvestment * 0.5);
-            
-            gold += sellValue;
-            
-            const towerIndex = towers.indexOf(t);
-            if (towerIndex > -1) {
-                towers.splice(towerIndex, 1);
-            }
-            mapGrid[t.gridY][t.gridX] = 0;
-            
-            updateUI();
-            for(let i=0; i<15; i++) particles.push(new Particle(t.x, t.y, '#fbbf24', 5));
-            showDialogue(`出售了 ${typeData.name}，獲得 $${sellValue}！`, 2000);
-            closeMenus();
-        }
-
-        document.querySelectorAll('.menu-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation(); 
-                tryBuild(btn.getAttribute('data-type'));
-            });
-        });
-        document.getElementById('btn-cancel-build').addEventListener('click', (e) => { e.stopPropagation(); closeMenus(); });
-        document.getElementById('btn-do-upgrade').addEventListener('click', (e) => { e.stopPropagation(); tryUpgrade(); });
-        document.getElementById('btn-do-sell').addEventListener('click', (e) => { e.stopPropagation(); trySell(); });
-        document.getElementById('btn-cancel-upgrade').addEventListener('click', (e) => { e.stopPropagation(); closeMenus(); });
-
-        class Enemy {
-            constructor(hpMultiplier) {
-                this.pathIndex = 0;
-                this.x = pathCoords[0].x * CELL_SIZE + CELL_SIZE/2;
-                this.y = pathCoords[0].y * CELL_SIZE + CELL_SIZE/2;
-                this.baseSpeed = 60; 
-                this.speed = this.baseSpeed;
-                
-                const diffMult = difficultyConfig[difficulty].hpMult;
-                this.maxHp = (30 + (wave * 30 * hpMultiplier)) * diffMult;
-                this.hp = this.maxHp;
-                this.size = hpMultiplier > 1 ? 18 : 14; 
-                
-                this.reward = (difficulty === 'easy' ? 12 : (difficulty === 'hard' ? 8 : 10)) + Math.floor(wave / 2);
-                
-                const waveIndex = Math.min(Math.floor((wave - 1) / 2), 4);
-                this.imageKey = ['enemy_alien', 'enemy_ogre', 'enemy_tengu', 'enemy_ghost', 'enemy_skull'][waveIndex];
-                this.emoji = ['👾', '👹', '👺', '👻', '💀'][waveIndex];
-                
-                this.slowTimer = 0;
-                this.burnTimer = 0;
-                this.burnDamageTimer = 0;
-                this.burnDamagePerSecond = 0;
-            }
-            applySlow(duration) { 
-                this.slowTimer = duration; 
-            }
-            applyBurn(duration, damagePerSecond) {
-                this.burnTimer = duration;
-                this.burnDamagePerSecond = damagePerSecond;
-            }
-            update(dt) {
-                if (this.pathIndex >= pathCoords.length - 1) return;
-                
-                if (this.slowTimer > 0) {
-                    this.slowTimer -= dt;
-                    this.speed = this.baseSpeed * 0.5; 
-                    if (Math.random() < 0.15) {
-                        particles.push(new Particle(this.x, this.y, '#93c5fd', 2)); 
-                    }
-                } else { 
-                    this.speed = this.baseSpeed; 
-                }
-
-                if (this.burnTimer > 0) {
-                    this.burnTimer -= dt;
-                    this.hp -= this.burnDamagePerSecond * dt; 
-                    if (Math.random() < 0.25) {
-                        particles.push(new Particle(this.x, this.y, '#f97316', 3)); 
-                    }
-                }
-
-                let targetPoint = pathCoords[this.pathIndex + 1];
-                let targetX = targetPoint.x * CELL_SIZE + CELL_SIZE/2;
-                let targetY = targetPoint.y * CELL_SIZE + CELL_SIZE/2;
-                let dx = targetX - this.x; let dy = targetY - this.y;
-                let dist = Math.hypot(dx, dy);
-
-                if (dist < 2) {
-                    this.pathIndex++; this.x = targetX; this.y = targetY;
-                } else {
-                    let moveAmount = this.speed * dt;
-                    if (moveAmount > dist) moveAmount = dist;
-                    this.x += (dx / dist) * moveAmount; this.y += (dy / dist) * moveAmount;
-                }
-            }
-            draw(ctx) {
-                if (IMAGES[this.imageKey] && IMAGES[this.imageKey].loaded) {
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.clip();
-                    ctx.drawImage(IMAGES[this.imageKey].img, this.x - this.size, this.y - this.size, this.size * 2, this.size * 2);
-                    ctx.restore();
-                } else {
-                    ctx.font = `${this.size * 1.8}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                    ctx.fillText(this.emoji, this.x, this.y);
-                }
-                
-                if (this.slowTimer > 0) {
-                    ctx.fillStyle = "rgba(147, 197, 253, 0.4)"; 
-                    ctx.beginPath(); 
-                    ctx.arc(this.x, this.y, this.size + 2, 0, Math.PI*2); 
-                    ctx.fill();
-                }
-                if (this.burnTimer > 0) {
-                    ctx.fillStyle = "rgba(249, 115, 22, 0.35)"; 
-                    ctx.beginPath(); 
-                    ctx.arc(this.x, this.y, this.size + 1, 0, Math.PI*2); 
-                    ctx.fill();
-                }
-
-                ctx.fillStyle = "red"; ctx.fillRect(this.x - 15, this.y - 20, 30, 4);
-                ctx.fillStyle = "#22c55e"; ctx.fillRect(this.x - 15, this.y - 20, 30 * (this.hp / this.maxHp), 4);
-            }
-        }
-
-        class Tower {
-            constructor(x, y, typeKey) {
-                this.gridX = x; this.gridY = y;
-                this.x = x * CELL_SIZE + CELL_SIZE/2; this.y = y * CELL_SIZE + CELL_SIZE/2;
-                this.type = typeKey; const typeData = TOWER_TYPES[typeKey];
-                this.level = 1; this.range = typeData.baseRange; this.damage = typeData.baseDmg; this.cooldown = typeData.baseCooldown;
-                this.timer = 0; this.target = null;
-            }
-            update(dt) {
-                this.timer -= dt;
-                if (!this.target || this.target.hp <= 0 || Math.hypot(this.target.x - this.x, this.target.y - this.y) > this.range) {
-                    this.target = null; let closestDist = this.range;
-                    for (let enemy of enemies) {
-                        let dist = Math.hypot(enemy.x - this.x, enemy.y - this.y);
-                        if (dist <= closestDist) { closestDist = dist; this.target = enemy; }
-                    }
-                }
-                if (this.target && this.timer <= 0) { this.shoot(); this.timer = this.cooldown; }
-            }
-            shoot() {
-                projectiles.push(new Projectile(this.x, this.y, this.target, this.damage, this.type));
-                particles.push(new Particle(this.x, this.y, TOWER_TYPES[this.type].projectileColor, 5));
-            }
-            draw(ctx) {
-                const typeData = TOWER_TYPES[this.type];
-                const maxLevel = typeData.upgrades.length + 1;
-                
-                ctx.beginPath(); ctx.arc(this.x, this.y, 18, 0, Math.PI * 2);
-                
-                if (this.level === maxLevel) {
-                    ctx.fillStyle = "rgba(255,215,0,0.6)"; 
-                    ctx.shadowBlur = 15;
-                    ctx.shadowColor = "gold";
-                } else if (this.level > 1) {
-                    ctx.fillStyle = "rgba(192,192,192,0.6)"; 
-                    ctx.shadowBlur = 0;
-                } else {
-                    ctx.fillStyle = typeData.color + "99"; 
-                    ctx.shadowBlur = 0;
-                }
-                ctx.fill();
-                ctx.shadowBlur = 0; 
-
-                ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                
-                if (IMAGES[this.type] && IMAGES[this.type].loaded) {
-                    ctx.save();
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, 16, 0, Math.PI * 2);
-                    ctx.clip(); 
-                    ctx.drawImage(IMAGES[this.type].img, this.x - 16, this.y - 16, 32, 32);
-                    ctx.restore();
-                } else {
-                    ctx.font = "24px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-                    ctx.fillText(typeData.emoji, this.x, this.y);
-                }
-                
-                if (this.level > 1) {
-                    ctx.fillStyle = this.level === maxLevel ? "#fde047" : "white"; 
-                    ctx.font = "bold 11px Arial"; 
-                    ctx.strokeStyle = "black";
-                    ctx.lineWidth = 2;
-                    ctx.strokeText(this.level === maxLevel ? "MAX" : `L${this.level}`, this.x + 12, this.y - 12);
-                    ctx.fillText(this.level === maxLevel ? "MAX" : `L${this.level}`, this.x + 12, this.y - 12);
-                }
-            }
-        }
-
-        class ExplosionEffect {
-            constructor(x, y, type, size = 80, duration = 0.4) {
-                this.x = x;
-                this.y = y;
-                this.type = type;
-                this.size = size;
-                this.maxLife = duration;
-                this.life = duration;
-            }
-            update(dt) {
-                this.life -= dt;
-            }
-            draw(ctx) {
-                ctx.save();
-                ctx.globalAlpha = Math.max(0, this.life / this.maxLife);
-                let currentScaleSize = this.size * (1.2 - (this.life / this.maxLife) * 0.4); 
-
-                let imgKey = 'missileExplosion'; 
-                if (this.type === 'fire') imgKey = 'fire';
-                if (this.type === 'ice') imgKey = 'ice';
-
-                if (IMAGES[imgKey] && IMAGES[imgKey].loaded) {
-                    ctx.drawImage(IMAGES[imgKey].img, this.x - currentScaleSize/2, this.y - currentScaleSize/2, currentScaleSize, currentScaleSize);
-                } else {
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, currentScaleSize/2, 0, Math.PI * 2);
-                    ctx.fillStyle = this.type === 'ice' ? "rgba(147, 197, 253, 0.5)" : "rgba(239, 68, 68, 0.6)";
-                    ctx.fill();
-                }
-                ctx.restore();
-            }
-        }
-
-        class Projectile {
-            constructor(x, y, target, damage, type) {
-                this.x = x; this.y = y; this.target = target; this.damage = damage; this.type = type;
-                this.speed = type === 'missile' ? 220 : 350; 
-                this.active = true;
-            }
-            update(dt) {
-                if (!this.active || !this.target) return;
-                let dx = this.target.x - this.x; let dy = this.target.y - this.y;
-                let dist = Math.hypot(dx, dy);
-                if (dist < 10) {
-                    this.hit();
-                    this.active = false;
-                    return;
-                }
-                let moveAmount = this.speed * dt;
-                this.x += (dx / dist) * moveAmount; this.y += (dy / dist) * moveAmount;
-
-                if (this.type === 'missile' && Math.random() < 0.4) {
-                    particles.push(new Particle(this.x, this.y, '#d8b4fe', 3));
-                }
-            }
-            
-            hit() {
-                const target = this.target;
-                
-                if (this.type === 'star') {
-                    target.hp -= this.damage;
-                    for (let i = 0; i < 4; i++) {
-                        particles.push(new Particle(this.x, this.y, '#fbbf24', 3));
-                    }
-                } 
-                else if (this.type === 'fire') {
-                    const splashRadius = 70; 
-                    const burnDuration = 3.0; 
-                    const burnDmgPerSec = this.damage * 0.35; 
-                    
-                    explosions.push(new ExplosionEffect(this.x, this.y, 'fire', 80, 0.35));
-                    
-                    for (let i = 0; i < 10; i++) {
-                        particles.push(new Particle(this.x, this.y, '#ef4444', 3)); 
-                    }
-                    
-                    enemies.forEach(e => {
-                        let d = Math.hypot(e.x - this.x, e.y - this.y);
-                        if (d <= splashRadius) {
-                            e.hp -= this.damage; 
-                            e.applyBurn(burnDuration, burnDmgPerSec); 
-                        }
-                    });
-                } 
-                else if (this.type === 'ice') {
-                    const slowRadius = 90; 
-                    const slowDuration = 2.5; 
-                    
-                    explosions.push(new ExplosionEffect(this.x, this.y, 'ice', 90, 0.35));
-                    
-                    for (let i = 0; i < 10; i++) {
-                        particles.push(new Particle(this.x, this.y, '#60a5fa', 2)); 
-                    }
-                    
-                    enemies.forEach(e => {
-                        let d = Math.hypot(e.x - this.x, e.y - this.y);
-                        if (d <= slowRadius) { // 修正處：這裡原本誤寫為 splashRadius，已修正為 slowRadius
-                            e.hp -= this.damage; 
-                            e.applySlow(slowDuration); 
-                        }
-                    });
-                }
-                else if (this.type === 'missile') {
-                    const splashRadius = 100; 
-                    
-                    explosions.push(new ExplosionEffect(this.x, this.y, 'missile', 130, 0.45));
-
-                    for (let i = 0; i < 15; i++) {
-                        particles.push(new Particle(this.x, this.y, '#c084fc', 4));
-                        particles.push(new Particle(this.x, this.y, '#ffffff', 2));
-                    }
-
-                    enemies.forEach(e => {
-                        let d = Math.hypot(e.x - this.x, e.y - this.y);
-                        if (d <= splashRadius) {
-                            e.hp -= this.damage; 
-                        }
-                    });
-                }
-            }
-            
-            draw(ctx) {
-                if (IMAGES[this.type] && IMAGES[this.type].loaded) {
-                    let size = this.type === 'missile' ? 24 : 16;
-                    ctx.drawImage(IMAGES[this.type].img, this.x - size/2, this.y - size/2, size, size);
-                } else {
-                    const color = TOWER_TYPES[this.type].projectileColor;
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.type === 'missile' ? 6 : 4, 0, Math.PI * 2);
-                    ctx.fillStyle = color; ctx.fill();
-                    ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.fill(); ctx.shadowBlur = 0;
-                }
-            }
-        }
-
-        class Particle {
-            constructor(x, y, color, size) {
-                this.x = x; this.y = y; this.color = color; this.size = size; this.life = 1.0;
-                this.vx = (Math.random() - 0.5) * 120; this.vy = (Math.random() - 0.5) * 120;
-            }
-            update(dt) { this.x += this.vx * dt; this.y += this.vy * dt; this.life -= dt * 3.5; }
-            draw(ctx) {
-                ctx.globalAlpha = Math.max(0, this.life);
-                ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
-                ctx.fillStyle = this.color; ctx.fill(); ctx.globalAlpha = 1.0;
-            }
-        }
-
-        function handleInteraction(gX, gY) {
-            if (gX < 0 || gX >= COLS || gY < 0 || gY >= ROWS || gameState !== 'playing') return;
-            const tileStatus = mapGrid[gY][gX];
-            if (tileStatus === 0) {
-                if (activeMenu === 'build' && menuGridX === gX && menuGridY === gY) closeMenus();
-                else openBuildMenu(gX, gY);
-            } else if (tileStatus === 2) {
-                const clickedTower = towers.find(t => t.gridX === gX && t.gridY === gY);
-                if (clickedTower) {
-                    if (activeMenu === 'upgrade' && selectedTower === clickedTower) closeMenus();
-                    else openUpgradeMenu(clickedTower);
-                }
-            } else { closeMenus(); }
-        }
-
-        window.addEventListener('keydown', (e) => {
-            if (gameState !== 'playing') return;
-            
-            if (activeMenu === 'build') {
-                if (e.key === '1') tryBuild('star');
-                if (e.key === '2') tryBuild('fire');
-                if (e.key === '3') tryBuild('ice');
-                if (e.key === '4') tryBuild('missile');
-                if (e.key === 'Escape') closeMenus();
-            } else if (activeMenu === 'upgrade') {
-                if (e.key === 'Enter' || e.key === ' ') { tryUpgrade(); e.preventDefault(); }
-                if (e.key === 'x' || e.key === 'X' || e.key === 'Backspace') { trySell(); e.preventDefault(); }
-                if (e.key === 'Escape') closeMenus();
-            }
-
-            switch(e.key) {
-                case 'w': case 'W': case 'ArrowUp': cursorY = Math.max(0, cursorY - 1); break;
-                case 's': case 'S': case 'ArrowDown': cursorY = Math.min(ROWS - 1, cursorY + 1); break;
-                case 'a': case 'A': case 'ArrowLeft': cursorX = Math.max(0, cursorX - 1); break;
-                case 'd': case 'D': case 'ArrowRight': cursorX = Math.min(COLS - 1, cursorX + 1); break;
-                case ' ': case 'Enter': 
-                    if (!activeMenu) handleInteraction(cursorX, cursorY); 
-                    e.preventDefault(); break;
-                case '7': setGameSpeed(1); break;
-                case '8': setGameSpeed(2); break;
-                case '9': setGameSpeed(3); break;
-            }
-        });
-
-        canvas.addEventListener('mousedown', (e) => {
-            if (gameState !== 'playing') return;
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
-            const mouseX = (e.clientX - rect.left) * scaleX; const mouseY = (e.clientY - rect.top) * scaleY;
-            const gX = Math.floor(mouseX / CELL_SIZE); const gY = Math.floor(mouseY / CELL_SIZE);
-            cursorX = gX; cursorY = gY;
-            handleInteraction(gX, gY);
-        });
-        
-        canvas.addEventListener('mousemove', (e) => {
-            if (gameState !== 'playing') return;
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
-            const mouseX = (e.clientX - rect.left) * scaleX; const mouseY = (e.clientY - rect.top) * scaleY;
-            cursorX = Math.floor(mouseX / CELL_SIZE); cursorY = Math.floor(mouseY / CELL_SIZE);
-        });
-
-        wrapper.addEventListener('mousedown', (e) => {
-            if (e.target === wrapper && gameState === 'playing') closeMenus();
-        });
-
-        document.getElementById('btn-start').addEventListener('click', startGame);
-        document.getElementById('btn-home').addEventListener('click', returnToLobby);
-
-        function update(dt) {
-            if (!isWaveActive) {
-                waveTimer -= dt;
-                if (waveTimer <= 0) {
-                    isWaveActive = true; 
-                    const countMult = difficulty === 'hard' ? 1.5 : (difficulty === 'easy' ? 0.8 : 1.0);
-                    enemiesToSpawn = Math.max(4, Math.floor((5 + Math.floor(wave * 2.5)) * countMult)); 
-                    enemySpawnCount = 0; 
-                    spawnTimer = 0;
-                    if(wave > 1) showDialogue(`第 ${wave} 波攻勢來襲！準備迎戰！`, 3000);
-                }
-            } else {
-                if (enemySpawnCount < enemiesToSpawn) {
-                    spawnTimer -= dt;
-                    if (spawnTimer <= 0) {
-                        let hpMulti = (Math.random() < 0.25 && wave > 2) ? 1.6 : 1; 
-                        enemies.push(new Enemy(hpMulti)); 
-                        enemySpawnCount++; 
-                        spawnTimer = Math.max(0.4, 1.2 - (wave * 0.05)); 
-                    }
-                } else if (enemies.length === 0) {
-                    isWaveActive = false; 
-                    wave++; 
-                    waveTimer = difficulty === 'hard' ? 3 : 4; 
-                    
-                    const config = difficultyConfig[difficulty];
-                    gold += config.waveReward + wave * 5; 
-                    
-                    updateUI();
-                    showDialogue(`成功防守！獲得資金補給。\n下一波將在 ${waveTimer} 秒後到達。`, 3000);
-                }
-            }
-            
-            towers.forEach(t => t.update(dt)); 
-            projectiles.forEach(p => p.update(dt)); 
-            particles.forEach(p => p.update(dt));
-            explosions.forEach(exp => exp.update(dt)); 
-
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                let e = enemies[i]; e.update(dt);
-                if (e.pathIndex >= pathCoords.length - 1) { gameOver(); return; }
-                if (e.hp <= 0) {
-                    gold += e.reward; updateUI();
-                    for(let j=0; j<5; j++) particles.push(new Particle(e.x, e.y, 'white', 4));
-                    enemies.splice(i, 1);
-                }
-            }
-
-            projectiles = projectiles.filter(p => p.active); 
-            particles = particles.filter(p => p.life > 0);
-            explosions = explosions.filter(exp => exp.life > 0);
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let y = 0; y < ROWS; y++) {
-                for (let x = 0; x < COLS; x++) {
-                    if (mapGrid[y][x] === 1 || mapGrid[y][x] === 3) {
-                        ctx.fillStyle = "#d1d5db"; ctx.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                        ctx.strokeStyle = "#9ca3af"; ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                    } else {
-                        ctx.strokeStyle = "rgba(255,255,255,0.1)"; ctx.strokeRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-                    }
-                }
-            }
-            ctx.font = "32px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            ctx.fillText("🏰", BASE_POS.x * CELL_SIZE + CELL_SIZE/2, BASE_POS.y * CELL_SIZE + CELL_SIZE/2);
-            
-            towers.forEach(t => t.draw(ctx)); 
-            enemies.forEach(e => e.draw(ctx));
-            projectiles.forEach(p => p.draw(ctx)); 
-            particles.forEach(p => p.draw(ctx));
-            explosions.forEach(exp => exp.draw(ctx)); 
-
-            ctx.strokeStyle = "white"; ctx.lineWidth = 2;
-            ctx.strokeRect(cursorX * CELL_SIZE, cursorY * CELL_SIZE, CELL_SIZE, CELL_SIZE);
-            
-            if (activeMenu === 'upgrade' && selectedTower) {
-                drawRange(selectedTower.x, selectedTower.y, selectedTower.range, TOWER_TYPES[selectedTower.type].color);
-            } else if (mapGrid[cursorY] && mapGrid[cursorY][cursorX] === 0 && !activeMenu) {
-                drawRange(cursorX * CELL_SIZE + CELL_SIZE/2, cursorY * CELL_SIZE + CELL_SIZE/2, TOWER_TYPES.star.baseRange, "rgba(255, 255, 255, 0.3)");
-            } else if (mapGrid[cursorY] && mapGrid[cursorY][cursorX] === 2 && !activeMenu) {
-                const hoverTower = towers.find(t => t.gridX === cursorX && t.gridY === cursorY);
-                if (hoverTower) { drawRange(hoverTower.x, hoverTower.y, hoverTower.range, TOWER_TYPES[hoverTower.type].color); }
-            }
-        }
-        
-        function drawRange(x, y, radius, colorStr) {
-            ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI*2);
-            ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; ctx.fill();
-            ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.lineWidth = 1;
-            ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
-        }
-
-        function gameLoop(timestamp) {
-            if (!lastTime) lastTime = timestamp;
-            let dt = (timestamp - lastTime) / 1000;
-            if (dt > 0.1) dt = 0.1; 
-            lastTime = timestamp;
-
-            if (gameState === 'playing') {
-                update(dt * gameSpeed);
-                if (gameState === 'playing') { 
-                    draw();
-                }
-            }
-            
-            if (gameState === 'playing') {
-                animationId = requestAnimationFrame(gameLoop);
-            }
-        }
-
-    </script>
+<!-- 大廳 -->
+<div id="home-screen" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 z-50 overflow-y-auto py-6 px-2">
+<div class="bg-slate-900 p-6 rounded-2xl shadow-2xl text-center max-w-2xl border border-slate-800 relative w-full">
+<div class="absolute top-4 right-4 bg-slate-800 border border-yellow-500/50 px-4 py-1.5 rounded-full flex items-center gap-2 shadow-lg z-10 scale-90 sm:scale-100 origin-top-right">
+<span class="text-xs font-bold text-gray-300">星碎：</span>
+<span id="lobby-crystals" class="text-lg font-black text-yellow-400">300</span>
+</div>
+<span id="dev-badge" class="hidden absolute top-16 right-4 bg-green-600 text-white text-[10px] font-black font-mono px-2 py-0.5 rounded-full border border-green-300 shadow animate-pulse z-10">DEV</span>
+<h1 class="text-4xl sm:text-5xl font-black text-yellow-400 mb-2 tracking-wider mt-4 sm:mt-2">全明星塔防</h1>
+<p class="text-xs text-slate-400 mb-4">傳奇技能登場 — 每塔終極進化</p>
+
+<div class="mb-3 bg-gradient-to-r from-purple-950/60 to-violet-900/40 border border-purple-600/50 p-3 rounded-xl flex items-center justify-between text-left cursor-pointer hover:border-purple-400 transition" onclick="openSkillTree()">
+<div class="flex items-center gap-3"><span class="text-lg font-black text-purple-300 w-8 text-center">技</span><div><p class="text-xs font-bold text-purple-300">塔技能樹 + 傳奇技能</p><p class="text-[10px] text-gray-400">點擊為 10 座塔強化能力</p></div></div>
+<div class="text-right"><p class="text-lg font-black text-purple-300"><span id="skill-points-display">0</span><span class="text-xs text-gray-400"> SP</span></p><p class="text-[9px] text-gray-400">技能 <span id="skill-unlocked-count">0</span>/90 · 傳奇 <span id="legendary-count">0</span>/10</p></div>
+</div>
+
+<div id="achieve-summary" class="mb-3 bg-gradient-to-r from-yellow-950/60 to-amber-900/40 border border-yellow-600/50 p-3 rounded-xl flex items-center justify-between text-left cursor-pointer hover:border-yellow-400 transition" onclick="openAchievements()">
+<div class="flex items-center gap-3"><span class="text-lg font-black text-yellow-300 w-8 text-center">成</span><div><p class="text-xs font-bold text-yellow-300">成就進度</p><p class="text-[10px] text-gray-400">點擊查看全部成就</p></div></div>
+<div class="text-right"><p class="text-lg font-black text-yellow-400"><span id="achieve-count">0</span><span class="text-xs text-gray-400">/22</span></p><div class="w-24 h-1.5 bg-slate-800 rounded-full mt-1 overflow-hidden"><div id="achieve-bar" class="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all duration-500" style="width:0%;"></div></div></div>
+</div>
+
+<div class="bg-slate-800 p-4 rounded-xl mb-4 text-left border border-slate-700 text-xs sm:text-sm">
+<h2 class="text-sm sm:text-base font-bold text-blue-300 mb-1 border-b border-slate-600 pb-1">遊戲玩法與特殊敵人介紹</h2>
+<div class="text-gray-200 leading-relaxed space-y-1">
+<p>阻止敵人進入基地。前往商城抽卡解鎖新塔，並在「庫存」選擇 5 個塔上陣。</p>
+<p class="text-amber-400 font-bold">塔等級無上限。技能樹永久強化。傳奇技能顛覆戰局。</p>
+<p><strong>空氣：</strong> 飛行怪。僅有獵手塔與至尊神塔可對空攻擊。</p>
+<p><strong>減速：</strong> 剛登場時極快，越靠近基地速度越慢。</p>
+<p><strong>憤怒：</strong> 血量越低跑得越快，殘血時急速衝鋒。</p>
+<p><strong>超級Boss：</strong> 每 15 秒發動一次咆哮攻擊，將周圍防禦塔暈眩 3 秒。</p>
+<p class="text-amber-300 font-bold pt-1">防線機制：基地擁有 100 HP，小怪扣 10 HP，Boss 扣 50 HP。</p>
+</div>
+</div>
+
+<div class="mb-3 text-left">
+<label class="block text-xs font-bold text-gray-300 mb-1">選擇遊戲模式：</label>
+<div class="grid grid-cols-2 gap-3">
+<button id="opt-mode-challenge" class="py-2 px-2 sm:px-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center justify-center bg-blue-900/40 border-blue-500 text-white" onclick="selectMode('challenge')"><span class="text-xs sm:text-sm">20 波挑戰模式</span></button>
+<button id="opt-mode-endless" class="py-2 px-2 sm:px-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center justify-center bg-slate-800 border-slate-700 text-slate-400" onclick="selectMode('endless')"><span class="text-xs sm:text-sm">無盡挑戰模式</span></button>
+</div>
+</div>
+
+<div class="mb-4 text-left">
+<label class="block text-xs font-bold text-gray-300 mb-1">選擇戰役難度：</label>
+<div class="grid grid-cols-3 gap-2">
+<button id="opt-diff-easy" class="py-1.5 px-1 rounded-xl font-bold border-2 transition-all flex flex-col items-center bg-slate-800 border-slate-700 text-slate-400" onclick="selectDifficulty('easy')"><span class="text-green-400 text-[11px] sm:text-xs">簡單</span><span class="text-[9px] text-gray-400 font-normal mt-0.5">勝 100 星碎</span></button>
+<button id="opt-diff-hardcore" class="py-1.5 px-1 rounded-xl font-bold border-2 transition-all flex flex-col items-center bg-yellow-950/40 border-yellow-500 text-white" onclick="selectDifficulty('hardcore')"><span class="text-yellow-400 text-[11px] sm:text-xs">硬核</span><span class="text-[9px] text-gray-300 font-normal mt-0.5">勝 450 星碎</span></button>
+<button id="opt-diff-nightmare" class="py-1.5 px-1 rounded-xl font-bold border-2 transition-all flex flex-col items-center bg-slate-800 border-slate-700 text-slate-400" onclick="selectDifficulty('nightmare')"><span class="text-red-400 text-[11px] sm:text-xs">噩夢</span><span class="text-[9px] text-gray-400 font-normal mt-0.5">勝 1000 星碎</span></button>
+</div>
+</div>
+
+<div id="lobby-speed3-banner" class="mb-3 bg-purple-950/60 border border-purple-500/50 p-2.5 rounded-xl flex items-center justify-between text-left">
+<div><span class="text-xs font-bold text-purple-300">永久三倍速特權</span><p class="text-[10px] text-gray-300">解鎖後所有地圖永久開啟 3 倍速切換</p></div>
+<button id="btn-buy-speed3-lobby" onclick="buySpeed3WithCrystals()" class="py-1.5 px-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg shadow border border-purple-400 shrink-0">5000 星碎解鎖</button>
+</div>
+
+<div class="grid grid-cols-5 gap-2 sm:gap-2">
+<button onclick="openInventory()" class="py-2 sm:py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold text-[10px] sm:text-xs rounded-xl shadow-lg transition-all">庫存 (<span id="loadout-count-display">4</span>/5)</button>
+<button onclick="openShop()" class="py-2 sm:py-3 bg-purple-700 hover:bg-purple-600 text-white font-bold text-[10px] sm:text-xs rounded-xl shadow-lg transition-all">商城</button>
+<button onclick="openSkillTree()" class="py-2 sm:py-3 bg-violet-700 hover:bg-violet-600 text-white font-bold text-[10px] sm:text-xs rounded-xl shadow-lg transition-all">技能</button>
+<button onclick="openAchievements()" class="py-2 sm:py-3 bg-yellow-700 hover:bg-yellow-600 text-white font-bold text-[10px] sm:text-xs rounded-xl shadow-lg transition-all">成就</button>
+<button id="btn-start" class="py-2 sm:py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white font-bold text-xs sm:text-base rounded-xl shadow-lg transform transition hover:scale-[1.02]">開始遊戲</button>
+</div>
+
+<div class="mt-3 pt-3 border-t border-slate-800">
+<label class="block text-[10px] text-slate-500 mb-1 text-left">開發者終端機（僅限本機）</label>
+<div class="flex gap-2">
+<input id="dev-input" type="text" autocomplete="off" spellcheck="false" placeholder="輸入指令…" class="flex-1 bg-black/70 border border-green-700/50 text-green-400 font-mono text-xs px-3 py-2 rounded-lg outline-none focus:border-green-400 transition">
+<button id="dev-run" class="px-3 py-2 bg-green-800 hover:bg-green-700 text-green-200 font-mono text-xs font-bold rounded-lg border border-green-600 transition">執行</button>
+</div>
+<p class="text-[10px] text-slate-600 mt-1 text-left">提示：本終端機僅供娛樂，不會連結到任何遠端儲存庫</p>
+</div>
+</div>
+</div>
+
+<!-- 技能樹 -->
+<div id="skilltree-screen" class="hidden absolute inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center p-2 sm:p-4">
+<div class="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-3xl w-full max-w-4xl shadow-2xl relative flex flex-col h-[92vh]">
+<button onclick="closeSkillTree()" class="absolute top-3 right-3 text-slate-400 hover:text-white text-2xl z-10">X</button>
+<div class="border-b border-slate-800 pb-3 mb-3 text-left shrink-0 flex justify-between items-center">
+<div><h2 class="text-xl sm:text-2xl font-black text-purple-400">塔技能樹</h2><p class="text-[10px] sm:text-xs text-slate-400 mt-1">每波 +1 SP、Boss +5 SP、成就 +3 SP。解鎖專精 Lv.3 可開啟傳奇技能。</p></div>
+<div class="bg-slate-800 border border-purple-500 px-3 py-1 rounded-full flex items-center gap-1 shrink-0"><span id="skilltree-points" class="text-base font-black text-purple-300">0</span><span class="text-xs text-gray-400">SP</span></div>
+</div>
+<div id="tower-selector" class="flex gap-2 mb-3 overflow-x-auto shrink-0 pb-1"></div>
+<div id="skilltree-content" class="flex-1 overflow-y-auto pr-1"></div>
+<button onclick="closeSkillTree()" class="w-full py-2.5 bg-purple-600 hover:bg-purple-500 rounded-xl font-bold text-white mt-4 transition shadow-lg shrink-0">關閉技能樹</button>
+</div>
+</div>
+
+<!-- 成就 -->
+<div id="achievements-screen" class="hidden absolute inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center p-2 sm:p-4">
+<div class="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-3xl w-full max-w-3xl shadow-2xl relative flex flex-col h-[90vh]">
+<button onclick="closeAchievements()" class="absolute top-3 right-3 text-slate-400 hover:text-white text-2xl z-10">X</button>
+<div class="border-b border-slate-800 pb-3 mb-3 text-left shrink-0">
+<h2 class="text-xl sm:text-2xl font-black text-yellow-400">成就殿堂</h2>
+<p class="text-[10px] sm:text-xs text-slate-400 mt-1">已解鎖 <span id="achieve-page-count" class="text-yellow-400 font-bold">0</span> / <span id="achieve-page-total">22</span> — 完成成就獲得星碎 + 技能點</p>
+</div>
+<div class="flex gap-2 mb-3 overflow-x-auto shrink-0 pb-1">
+<button class="achieve-tab px-3 py-1.5 text-xs font-bold rounded-lg bg-yellow-600 text-white shrink-0" data-cat="all">全部</button>
+<button class="achieve-tab px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 shrink-0" data-cat="battle">戰鬥</button>
+<button class="achieve-tab px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 shrink-0" data-cat="tower">塔防</button>
+<button class="achieve-tab px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 shrink-0" data-cat="collect">收集</button>
+<button class="achieve-tab px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 shrink-0" data-cat="special">特殊</button>
+</div>
+<div id="achievements-list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+<button onclick="closeAchievements()" class="w-full py-2.5 bg-yellow-600 hover:bg-yellow-500 rounded-xl font-bold text-white mt-4 transition shadow-lg shrink-0">關閉</button>
+</div>
+</div>
+
+<!-- 開發者面板 -->
+<div id="dev-panel" class="hidden absolute inset-0 bg-black/90 z-[70] flex items-center justify-center p-3">
+<div class="bg-slate-900 border-2 border-green-500 rounded-2xl p-5 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
+<div class="flex justify-between items-center mb-4 border-b border-green-800 pb-2"><h2 class="text-green-400 font-black text-lg font-mono">DEV MODE — 全數值自訂</h2><button onclick="closeDevPanel()" class="text-slate-400 hover:text-white text-2xl">X</button></div>
+<div class="space-y-3 text-left text-xs">
+<div><label class="block text-green-300 font-bold mb-1">星碎</label><input id="dev-crystals" type="number" class="w-full bg-black/70 border border-green-700/50 text-green-300 font-mono px-3 py-1.5 rounded-lg outline-none"></div>
+<div><label class="block text-green-300 font-bold mb-1">技能點</label><input id="dev-sp" type="number" class="w-full bg-black/70 border border-green-700/50 text-green-300 font-mono px-3 py-1.5 rounded-lg outline-none"></div>
+<div><label class="block text-green-300 font-bold mb-1">起始金幣</label><input id="dev-gold" type="number" class="w-full bg-black/70 border border-green-700/50 text-green-300 font-mono px-3 py-1.5 rounded-lg outline-none"></div>
+<div><label class="block text-green-300 font-bold mb-1">基地 HP</label><input id="dev-basehp" type="number" class="w-full bg-black/70 border border-green-700/50 text-green-300 font-mono px-3 py-1.5 rounded-lg outline-none"></div>
+<div><label class="block text-green-300 font-bold mb-1">怪物 HP 倍率</label><input id="dev-hpmult" type="number" step="0.1" class="w-full bg-black/70 border border-green-700/50 text-green-300 font-mono px-3 py-1.5 rounded-lg outline-none"></div>
+<div><label class="block text-green-300 font-bold mb-1">怪物速度倍率</label><input id="dev-speedmult" type="number" step="0.1" class="w-full bg-black/70 border border-green-700/50 text-green-300 font-mono px-3 py-1.5 rounded-lg outline-none"></div>
+<div><label class="block text-green-300 font-bold mb-1">金幣收益倍率</label><input id="dev-goldmult" type="number" step="0.1" class="w-full bg-black/70 border border-green-700/50 text-green-300 font-mono px-3 py-1.5 rounded-lg outline-none"></div>
+<div><label class="block text-green-300 font-bold mb-1">遊戲速度（1~10）</label><input id="dev-gamespeed" type="number" min="1" max="10" class="w-full bg-black/70 border border-green-700/50 text-green-300 font-mono px-3 py-1.5 rounded-lg outline-none"></div>
+<label class="flex items-center gap-2 cursor-pointer select-none"><input id="dev-triplespeed" type="checkbox" class="w-4 h-4 accent-green-500"><span class="text-green-300 font-bold">已解鎖三倍速</span></label>
+<label class="flex items-center gap-2 cursor-pointer select-none"><input id="dev-alltowers" type="checkbox" class="w-4 h-4 accent-green-500"><span class="text-green-300 font-bold">解鎖全部防禦塔</span></label>
+<label class="flex items-center gap-2 cursor-pointer select-none"><input id="dev-infgold" type="checkbox" class="w-4 h-4 accent-green-500"><span class="text-green-300 font-bold">無限金幣</span></label>
+<label class="flex items-center gap-2 cursor-pointer select-none"><input id="dev-onehit" type="checkbox" class="w-4 h-4 accent-green-500"><span class="text-green-300 font-bold">一擊必殺</span></label>
+<label class="flex items-center gap-2 cursor-pointer select-none"><input id="dev-allachieve" type="checkbox" class="w-4 h-4 accent-green-500"><span class="text-green-300 font-bold">一鍵解鎖全部成就</span></label>
+<label class="flex items-center gap-2 cursor-pointer select-none"><input id="dev-allskills" type="checkbox" class="w-4 h-4 accent-green-500"><span class="text-green-300 font-bold">一鍵解鎖全部技能</span></label>
+<label class="flex items-center gap-2 cursor-pointer select-none"><input id="dev-alllegendary" type="checkbox" class="w-4 h-4 accent-green-500"><span class="text-green-300 font-bold">一鍵解鎖全部傳奇技能</span></label>
+</div>
+<div class="grid grid-cols-2 gap-2 mt-5">
+<button onclick="applyDevPanel()" class="py-2 bg-green-600 hover:bg-green-500 text-white font-bold text-sm rounded-lg transition">套用</button>
+<button onclick="resetDevDefaults()" class="py-2 bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm rounded-lg transition">恢復預設</button>
+</div>
+<p class="text-[10px] text-green-700 mt-3 font-mono text-center">hack mode active — client-side only</p>
+</div>
+</div>
+
+<!-- 庫存 -->
+<div id="inventory-screen" class="hidden absolute inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center p-2 sm:p-4">
+<div class="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-3xl w-full max-w-2xl shadow-2xl relative flex flex-col max-h-[90vh]">
+<button onclick="closeInventory()" class="absolute top-3 right-3 text-slate-400 hover:text-white text-2xl z-10">X</button>
+<div class="border-b border-slate-800 pb-3 mb-4 text-left"><h2 class="text-xl sm:text-2xl font-black text-blue-400">明星戰術庫存</h2><p class="text-[10px] sm:text-xs text-slate-400">挑選解鎖的防禦塔加入攜帶陣容（最多 5 個）</p></div>
+<div class="bg-slate-950 p-3 rounded-2xl border border-blue-500/30 mb-4 text-left shrink-0"><h3 class="text-xs font-bold text-blue-300 mb-2 flex justify-between"><span>當前戰場攜帶陣容</span><span id="loadout-num-text" class="text-yellow-400 font-extrabold">4 / 5</span></h3><div id="equipped-slots" class="grid grid-cols-5 gap-1.5 min-h-[65px]"></div></div>
+<div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex-1 flex flex-col min-h-0 text-left"><h3 class="text-xs font-bold text-slate-400 mb-2 border-b border-slate-800 pb-1">可選備戰庫存</h3><div id="inventory-list" class="grid grid-cols-3 sm:grid-cols-4 gap-2 overflow-y-auto flex-1 pr-1"></div></div>
+<button onclick="closeInventory()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-white mt-4 transition shadow-lg shrink-0">儲存備戰設定</button>
+</div>
+</div>
+
+<!-- 商城 -->
+<div id="shop-screen" class="hidden absolute inset-0 bg-slate-950/95 z-50 flex flex-col items-center justify-center p-2 sm:p-4">
+<div class="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-3xl w-full max-w-3xl shadow-2xl relative flex flex-col h-[90vh]">
+<button onclick="closeShop()" class="absolute top-3 right-3 text-slate-400 hover:text-white text-2xl z-10">X</button>
+<div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-3 shrink-0"><div><h2 class="text-xl sm:text-2xl font-black text-purple-400">明星召喚商城</h2></div><div class="bg-slate-800 border border-yellow-500 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full flex items-center gap-1"><span id="shop-crystals" class="text-base sm:text-lg font-black text-yellow-400">300</span><span class="text-xs text-gray-400">星碎</span></div></div>
+<div class="flex flex-col sm:flex-row gap-3 flex-1 min-h-0">
+<div class="sm:w-1/3 bg-slate-950 p-3 rounded-2xl border border-slate-800 flex flex-col shrink-0 h-[25vh] sm:h-auto"><h3 class="text-xs font-bold text-slate-400 mb-2 border-b border-slate-800 pb-1">已解鎖明星名冊</h3><div id="unlocked-list" class="flex-1 overflow-y-auto space-y-1.5 pr-1"></div></div>
+<div class="sm:w-2/3 bg-slate-950 p-3 sm:p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-between text-center relative flex-1 min-h-0">
+<div id="altar-default" class="my-auto flex flex-col justify-center h-full w-full">
+<div class="text-3xl font-black text-purple-400 mb-3">召喚</div>
+<h3 class="text-lg sm:text-xl font-bold text-yellow-400 mb-2">明星召喚儀式</h3>
+<p class="text-[10px] sm:text-xs text-slate-400 max-w-sm mx-auto leading-relaxed mb-6">每次召喚有機會解鎖全新的特殊明星。<br>抽中已擁有的明星時，將轉化為星碎返還。</p>
+<div class="flex justify-center gap-2 sm:gap-4 flex-wrap">
+<button id="btn-draw-1" onclick="drawCard(1)" class="px-4 sm:px-5 py-2.5 sm:py-3 bg-slate-800 hover:bg-slate-700 border border-purple-500/50 rounded-xl font-bold text-white transition-all text-xs sm:text-sm">召喚一次 <br> <span class="text-[10px] sm:text-xs text-yellow-400 font-extrabold">100 星碎</span></button>
+<button id="btn-draw-10" onclick="drawCard(10)" class="px-6 py-2.5 sm:py-3 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 rounded-xl font-bold text-white transition-all shadow-lg text-xs sm:text-sm">十連召喚 <br> <span class="text-[10px] sm:text-xs text-yellow-300 font-extrabold">900 星碎</span></button>
+</div>
+</div>
+<div id="draw-results" class="hidden w-full h-full flex flex-col justify-between"><div id="cards-grid" class="grid grid-cols-5 gap-1.5 sm:gap-2 my-auto p-1 sm:p-2 overflow-y-auto max-h-full"></div><button onclick="resetAltar()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl font-bold text-white mt-3 transition shrink-0">確認並收下</button></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- 遊戲 -->
+<div id="game-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center w-full h-full bg-gray-900 overflow-hidden px-2 py-4">
+<div id="vote-screen" class="hidden absolute inset-0 bg-black bg-opacity-80 z-[60] flex flex-col items-center justify-center p-4">
+<div class="bg-slate-900 border border-blue-500 p-6 rounded-2xl text-center max-w-md w-full shadow-2xl">
+<h2 class="text-2xl font-black text-white mb-2">地圖難度投票</h2>
+<p class="text-slate-400 text-sm mb-6 leading-relaxed">進入地圖前，請投票選擇基礎難度加成：<br><span class="text-red-400 font-bold">困難模式下，怪物血量 x2、速度 x3</span></p>
+<div class="flex gap-4 justify-center"><button onclick="castMapVote('normal')" class="flex-1 py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-xl transition shadow-lg">普通模式</button><button onclick="castMapVote('hard')" class="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-xl transition shadow-lg">困難模式</button></div>
+</div>
+</div>
+<div class="w-full max-w-[800px] flex flex-wrap justify-between items-center mb-2 gap-2 z-10 shrink-0">
+<div class="flex items-center gap-2 flex-wrap">
+<div class="text-xl sm:text-2xl font-bold text-white drop-shadow-md mr-1">波數 <span id="ui-wave" class="text-blue-400">1</span><span id="ui-wave-max" class="text-gray-400 text-[10px] sm:text-sm">/20</span></div>
+<div class="bg-gray-800 border border-red-500/50 px-2 py-1 rounded-md flex items-center gap-1 shadow"><span class="text-xs sm:text-sm text-gray-300">基地</span><span id="ui-base-hp" class="text-xs sm:text-sm font-black text-red-400">100/100</span></div>
+<button id="btn-speed" class="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-[10px] sm:text-xs font-bold text-white transition shadow border border-gray-500">1 倍速</button>
+<button id="btn-autowave" class="hidden sm:inline-block px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-[10px] sm:text-xs font-bold text-white transition shadow border border-gray-500">自動跳波</button>
+<button id="btn-nextwave" class="hidden px-2 py-1 bg-red-600 hover:bg-red-500 rounded-md text-[10px] sm:text-xs font-bold text-white transition shadow border border-red-500 animate-pulse">下一波</button>
+</div>
+<div class="flex items-center gap-3"><div class="text-lg sm:text-2xl font-bold text-white drop-shadow-md">金幣 <span id="ui-gold" class="text-yellow-400">150</span></div><button id="btn-pause" class="px-2 sm:px-4 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-[10px] sm:text-sm font-bold text-white transition shadow border border-gray-500">暫停</button></div>
+</div>
+<div class="game-wrapper" id="game-area-wrapper">
+<canvas id="gameCanvas" width="800" height="600" class="absolute inset-0 z-10"></canvas>
+<div id="build-menu" class="hidden flex gap-2 bg-gray-800 p-2 rounded-lg border border-gray-600 shadow-xl z-50 opacity-95 flex-wrap justify-center w-max max-w-[90vw]"></div>
+<div id="upgrade-menu" class="hidden flex flex-col gap-2 bg-gray-800 p-2.5 sm:p-3 rounded-lg border border-gray-600 shadow-xl z-50 w-[150px] sm:min-w-[160px] opacity-95">
+<div class="text-center font-bold text-xs sm:text-sm border-b border-gray-600 pb-1 mb-1 text-white" id="upgrade-title">塔資訊</div>
+<div class="text-[10px] sm:text-xs text-gray-300 mb-1 leading-relaxed">
+等級: <span id="upg-level" class="text-white">1</span><span class="text-yellow-400 font-black"> +</span><br>
+攻擊: <span id="upg-dmg" class="text-white">10</span><br>
+射程: <span id="upg-range" class="text-white">100</span><br>
+<span id="upg-effect-desc" class="text-yellow-400 font-semibold text-[9px] sm:text-[10px]"></span>
+</div>
+<button id="btn-do-upgrade" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-1 px-2 rounded text-[10px] sm:text-sm w-full transition">升級 ($50)</button>
+<button id="btn-do-sell" class="bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-1 px-2 rounded text-[10px] sm:text-sm w-full transition mt-1">出售 (+$<span id="sell-value">25</span>)</button>
+<button id="btn-cancel-upgrade" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-1 px-2 rounded text-[10px] sm:text-sm w-full transition mt-1">取消</button>
+</div>
+<div id="dialogue-container" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-[95%] max-w-[600px] dialogue-box hidden transition-opacity duration-300 z-10 pointer-events-none"><p id="dialogue-text" class="text-sm sm:text-lg text-white font-bold"></p></div>
+</div>
+</div>
+
+<div id="achieve-toast-container" class="fixed top-20 right-4 z-[75] flex flex-col gap-2 pointer-events-none"></div>
+
+<div id="gameover-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-95 z-50 backdrop-blur-sm px-4">
+<div class="text-center transform transition-all scale-100 sm:scale-110">
+<h1 class="text-4xl sm:text-6xl font-black text-red-500 mb-4">基地被攻破了</h1>
+<p class="text-lg sm:text-2xl text-gray-200 mb-4">你成功防守了 <span id="final-wave" class="text-yellow-400 font-bold text-2xl sm:text-4xl">1</span> 波敵人。</p>
+<div class="bg-slate-800 px-6 py-3 rounded-xl max-w-sm mx-auto mb-8 border border-slate-700"><p class="text-xs sm:text-sm text-slate-400">戰敗補償星碎獎勵：</p><p class="text-xl sm:text-2xl font-black text-yellow-400 mt-1"><span id="reward-lost-crystals">0</span> 星碎</p></div>
+<button id="btn-home" class="px-6 py-2.5 sm:px-8 sm:py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg sm:text-xl rounded-lg shadow-lg transform transition hover:scale-105 flex items-center justify-center gap-2 mx-auto">返回大廳</button>
+</div>
+</div>
+
+<div id="victory-screen" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-95 z-50 backdrop-blur-sm px-4">
+<div class="text-center transform transition-all scale-100 sm:scale-110">
+<h1 class="text-4xl sm:text-6xl font-black text-green-400 mb-4">戰役大捷</h1>
+<p class="text-lg sm:text-2xl text-gray-200 mb-4">恭喜你！成功擊敗終極魔王！</p>
+<p id="victory-comment" class="text-xs sm:text-sm text-blue-300 mb-4 italic"></p>
+<div class="bg-slate-800 px-6 py-3 rounded-xl max-w-sm mx-auto mb-8 border border-slate-700"><p class="text-xs sm:text-sm text-slate-400">通關星碎獎勵：</p><p class="text-xl sm:text-2xl font-black text-yellow-400 mt-1"><span id="reward-win-crystals">0</span> 星碎</p></div>
+<button id="btn-home-victory" class="px-6 py-2.5 sm:px-8 sm:py-3 bg-green-600 hover:bg-green-500 text-white font-bold text-lg sm:text-xl rounded-lg shadow-lg transform transition hover:scale-105 flex items-center justify-center gap-2 mx-auto">榮譽返回大廳</button>
+</div>
+</div>
+
+<script>
+// ============================================================
+// 基礎類別
+// ============================================================
+class MapVoteSystem{
+constructor(){this.votes={normal:0,hard:0};this.current_difficulty="normal";this.hp_multiplier=1.0;this.speed_multiplier=1.0;}
+cast_vote(c){if(this.votes[c]!==undefined)this.votes[c]+=1;}
+finalize_vote(){if(this.votes["hard"]>this.votes["normal"]){this.current_difficulty="hard";this.hp_multiplier=2.0;this.speed_multiplier=3.0;}else{this.current_difficulty="normal";this.hp_multiplier=1.0;this.speed_multiplier=1.0;}}
+calculate_monster_stats(hp,spd){return{hp:hp*this.hp_multiplier,speed:spd*this.speed_multiplier};}
+}
+let mapVoteSystem=null;
+
+function buySpeed3WithCrystals(){
+if(playerAccount.has_triple_speed){alert("你已經永久擁有 3 倍速特權了。");return;}
+if(playerAccount.crystals>=5000){playerAccount.crystals-=5000;playerAccount.has_triple_speed=true;updateLobbyUI();saveAccount();unlockAchievement('buy_speed3');alert("恭喜！已成功用 5000 星碎永久解鎖 3 倍速特權。");}
+else alert(`星碎不足，需要 5000 星碎，目前僅有 ${playerAccount.crystals} 星碎。`);
+}
+
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+const wrapper=document.getElementById('game-area-wrapper');
+const CELL_SIZE=40;
+const COLS=800/CELL_SIZE;
+const ROWS=600/CELL_SIZE;
+
+let gameState='home';
+let animationId,lastTime=0,isDrawing=false;
+
+let playerAccount={
+crystals:300,
+unlockedTowers:['star','fire','ice','goldmine'],
+equippedTowers:['star','fire','ice','goldmine'],
+has_triple_speed:false,
+skillPoints:0,
+unlockedSkills:{}
+};
+
+// ============================================================
+// 技能樹
+// ============================================================
+function makeFireBranch(type){return[
+{id:`${type}_dmg1`,name:'火力強化 I',desc:'傷害 +15%',cost:1,icon:'攻',effect:{dmgMult:0.15}},
+{id:`${type}_dmg2`,name:'火力強化 II',desc:'傷害 +25%',cost:2,icon:'攻',requires:`${type}_dmg1`,effect:{dmgMult:0.25}},
+{id:`${type}_dmg3`,name:'火力強化 III',desc:'傷害 +40%',cost:3,icon:'攻',requires:`${type}_dmg2`,effect:{dmgMult:0.40}}
+];}
+function makeSpeedBranch(type){return[
+{id:`${type}_spd1`,name:'快速裝填 I',desc:'冷卻 -10%',cost:1,icon:'速',effect:{cdMult:-0.10}},
+{id:`${type}_spd2`,name:'快速裝填 II',desc:'冷卻 -15%',cost:2,icon:'速',requires:`${type}_spd1`,effect:{cdMult:-0.15}},
+{id:`${type}_spd3`,name:'快速裝填 III',desc:'冷卻 -25%',cost:3,icon:'速',requires:`${type}_spd2`,effect:{cdMult:-0.25}}
+];}
+
+const SKILL_TREES={
+star:{emoji:'星',name:'明星塔',special:[
+{id:'star_s1',name:'精準瞄準',desc:'射程 +20',cost:1,icon:'瞄',effect:{rangeAdd:20}},
+{id:'star_s2',name:'致命瞄準',desc:'暴擊率 +15%',cost:2,icon:'爆',requires:'star_s1',effect:{critChance:0.15}},
+{id:'star_s3',name:'審判之光',desc:'暴擊傷害 ×3',cost:3,icon:'裁',requires:'star_s2',effect:{critMult:3}}
+]},
+fire:{emoji:'火',name:'爆發塔',special:[
+{id:'fire_s1',name:'燃燒強化',desc:'燃燒傷害 +30%',cost:1,icon:'燃',effect:{burnBonus:0.30}},
+{id:'fire_s2',name:'爆炸擴大',desc:'爆炸範圍 +30',cost:2,icon:'炸',requires:'fire_s1',effect:{aoeBonus:30}},
+{id:'fire_s3',name:'地獄火',desc:'死亡時引發額外爆燃',cost:3,icon:'獄',requires:'fire_s2',effect:{deathExplode:true}}
+]},
+ice:{emoji:'冰',name:'冰霜塔',special:[
+{id:'ice_s1',name:'寒冰強化',desc:'緩速持續 +1 秒',cost:1,icon:'寒',effect:{slowAdd:1.0}},
+{id:'ice_s2',name:'凍結之風',desc:'緩速幅度 +15%',cost:2,icon:'凍',requires:'ice_s1',effect:{slowBonus:0.15}},
+{id:'ice_s3',name:'絕對零度',desc:'20% 機率凍結 1 秒',cost:3,icon:'零',requires:'ice_s2',effect:{freezeChance:0.20}}
+]},
+goldmine:{emoji:'金',name:'金庫塔',special:[
+{id:'goldmine_s1',name:'理財入門',desc:'收入 +20%',cost:1,icon:'財',effect:{incomeMult:0.20}},
+{id:'goldmine_s2',name:'投資專家',desc:'收入 +50%',cost:2,icon:'投',requires:'goldmine_s1',effect:{incomeMult:0.50}},
+{id:'goldmine_s3',name:'金融帝國',desc:'收入 +100%',cost:3,icon:'帝',requires:'goldmine_s2',effect:{incomeMult:1.00}}
+]},
+lightning:{emoji:'電',name:'閃電塔',special:[
+{id:'lightning_s1',name:'連鎖強化',desc:'連鎖數 +1',cost:1,icon:'連',effect:{chainBonus:1}},
+{id:'lightning_s2',name:'閃電精通',desc:'連鎖數 +2',cost:2,icon:'電',requires:'lightning_s1',effect:{chainBonus:2}},
+{id:'lightning_s3',name:'雷霆萬鈞',desc:'連鎖傷害不再衰減',cost:3,icon:'雷',requires:'lightning_s2',effect:{noChainFalloff:true}}
+]},
+blackhole:{emoji:'洞',name:'黑洞塔',special:[
+{id:'blackhole_s1',name:'引力強化',desc:'AOE 範圍 +20',cost:1,icon:'引',effect:{aoeBonus:20}},
+{id:'blackhole_s2',name:'引力場',desc:'AOE 範圍 +40',cost:2,icon:'場',requires:'blackhole_s1',effect:{aoeBonus:40}},
+{id:'blackhole_s3',name:'奇異點',desc:'死亡敵人引發二次爆炸',cost:3,icon:'奇',requires:'blackhole_s2',effect:{deathExplode:true}}
+]},
+hunter:{emoji:'獵',name:'獵手塔',special:[
+{id:'hunter_s1',name:'狙擊精通',desc:'射程 +30',cost:1,icon:'狙',effect:{rangeAdd:30}},
+{id:'hunter_s2',name:'穿甲彈',desc:'穿透 1 名敵人',cost:2,icon:'穿',requires:'hunter_s1',effect:{pierce:1}},
+{id:'hunter_s3',name:'一擊必殺',desc:'20% 機率秒殺 30% 血以下敵人',cost:3,icon:'殺',requires:'hunter_s2',effect:{executeChance:0.20}}
+]},
+sun:{emoji:'陽',name:'烈陽塔',special:[
+{id:'sun_s1',name:'灼熱光環',desc:'灼燒傷害 +50%',cost:1,icon:'灼',effect:{burnBonus:0.50}},
+{id:'sun_s2',name:'日冕爆發',desc:'射程 +25',cost:2,icon:'冕',requires:'sun_s1',effect:{rangeAdd:25}},
+{id:'sun_s3',name:'太陽風暴',desc:'灼燒可疊加 2 層',cost:3,icon:'曜',requires:'sun_s2',effect:{burnStack:2}}
+]},
+toxic:{emoji:'毒',name:'毒藤塔',special:[
+{id:'toxic_s1',name:'毒性強化',desc:'中毒傷害 +30%',cost:1,icon:'毒',effect:{poisonBonus:0.30}},
+{id:'toxic_s2',name:'瘟疫擴散',desc:'AOE 範圍 +20',cost:2,icon:'疫',requires:'toxic_s1',effect:{aoeBonus:20}},
+{id:'toxic_s3',name:'死亡之毒',desc:'死亡時釋放毒雲',cost:3,icon:'瘟',requires:'toxic_s2',effect:{deathExplode:true}}
+]},
+emperor:{emoji:'帝',name:'至尊神塔',special:[
+{id:'emperor_s1',name:'皇權',desc:'傷害 +20%',cost:1,icon:'皇',effect:{dmgMult:0.20}},
+{id:'emperor_s2',name:'帝王威嚴',desc:'冷卻 -15%',cost:2,icon:'嚴',requires:'emperor_s1',effect:{cdMult:-0.15}},
+{id:'emperor_s3',name:'神之審判',desc:'對Boss額外 +50% 傷害',cost:3,icon:'審',requires:'emperor_s2',effect:{bossBonus:0.50}}
+]}
+};
+
+Object.keys(SKILL_TREES).forEach(type=>{
+SKILL_TREES[type].branches=[
+{name:'火力',color:'red',skills:makeFireBranch(type)},
+{name:'速度',color:'blue',skills:makeSpeedBranch(type)},
+{name:'專精',color:'purple',skills:SKILL_TREES[type].special}
+];
+});
+
+// ============================================================
+// 傳奇技能
+// ============================================================
+const LEGENDARY_SKILLS={
+star:{id:'legendary_star',name:'星爆',icon:'爆',cost:10,requires:'star_s3',desc:'每第 5 發攻擊造成 500% 傷害'},
+fire:{id:'legendary_fire',name:'烈焰地獄',icon:'焰',cost:10,requires:'fire_s3',desc:'命中後留下 6 秒灼燒地帶'},
+ice:{id:'legendary_ice',name:'永凍領域',icon:'永',cost:10,requires:'ice_s3',desc:'被緩速的敵人受到 +50% 傷害'},
+goldmine:{id:'legendary_goldmine',name:'黃金雨',icon:'雨',cost:10,requires:'goldmine_s3',desc:'每波結束額外獲得 +200 金幣'},
+lightning:{id:'legendary_lightning',name:'雷霆之怒',icon:'怒',cost:10,requires:'lightning_s3',desc:'連鎖不再限制次數'},
+blackhole:{id:'legendary_blackhole',name:'事件視界',icon:'界',cost:10,requires:'blackhole_s3',desc:'每次擊殺 40% 機率立即重置冷卻'},
+hunter:{id:'legendary_hunter',name:'死神之眼',icon:'死',cost:10,requires:'hunter_s3',desc:'每第 5 發造成 500% 傷害'},
+sun:{id:'legendary_sun',name:'太陽耀斑',icon:'耀',cost:10,requires:'sun_s3',desc:'灼燒每秒傷害翻倍'},
+toxic:{id:'legendary_toxic',name:'瘟疫使者',icon:'使',cost:10,requires:'toxic_s3',desc:'中毒敵人死亡時毒雲擴散'},
+emperor:{id:'legendary_emperor',name:'神帝降臨',icon:'神',cost:10,requires:'emperor_s3',desc:'傷害 +50%，冷卻 -30%'}
+};
+
+function hasLegendary(type){const leg=LEGENDARY_SKILLS[type];return leg&&!!playerAccount.unlockedSkills[leg.id];}
+function getAllSkillsOfTower(type){const out=[];SKILL_TREES[type].branches.forEach(b=>b.skills.forEach(s=>out.push(s)));return out;}
+function getSkillById(id){
+for(const t in SKILL_TREES){for(const b of SKILL_TREES[t].branches){for(const s of b.skills){if(s.id===id)return s;}}}
+for(const t in LEGENDARY_SKILLS){if(LEGENDARY_SKILLS[t].id===id)return LEGENDARY_SKILLS[t];}
+return null;
+}
+function getTowerSkillBonus(type){
+const b={dmgMult:1,cdMult:1,rangeAdd:0,critChance:0,critMult:2,burnBonus:1,aoeBonus:0,incomeMult:1,chainBonus:0,slowAdd:0,slowBonus:0,freezeChance:0,pierce:0,executeChance:0,burnStack:1,bossBonus:0,deathExplode:false,noChainFalloff:false};
+for(const s of getAllSkillsOfTower(type)){
+if(!playerAccount.unlockedSkills[s.id])continue;
+const e=s.effect;
+if(e.dmgMult)b.dmgMult+=e.dmgMult;
+if(e.cdMult)b.cdMult+=e.cdMult;
+if(e.rangeAdd)b.rangeAdd+=e.rangeAdd;
+if(e.critChance)b.critChance+=e.critChance;
+if(e.critMult)b.critMult=Math.max(b.critMult,e.critMult);
+if(e.burnBonus)b.burnBonus+=e.burnBonus;
+if(e.aoeBonus)b.aoeBonus+=e.aoeBonus;
+if(e.incomeMult)b.incomeMult+=e.incomeMult;
+if(e.chainBonus)b.chainBonus+=e.chainBonus;
+if(e.slowAdd)b.slowAdd+=e.slowAdd;
+if(e.slowBonus)b.slowBonus+=e.slowBonus;
+if(e.freezeChance)b.freezeChance+=e.freezeChance;
+if(e.pierce)b.pierce+=e.pierce;
+if(e.executeChance)b.executeChance+=e.executeChance;
+if(e.burnStack)b.burnStack=Math.max(b.burnStack,e.burnStack);
+if(e.bossBonus)b.bossBonus+=e.bossBonus;
+if(e.deathExplode)b.deathExplode=true;
+if(e.noChainFalloff)b.noChainFalloff=true;
+}
+if(b.cdMult<0.2)b.cdMult=0.2;
+return b;
+}
+function canUnlockSkill(id){const s=getSkillById(id);if(!s)return false;if(playerAccount.unlockedSkills[id])return false;if(playerAccount.skillPoints<s.cost)return false;if(s.requires&&!playerAccount.unlockedSkills[s.requires])return false;return true;}
+function unlockSkill(id){
+if(!canUnlockSkill(id))return;
+const s=getSkillById(id);
+playerAccount.skillPoints-=s.cost;
+playerAccount.unlockedSkills[id]=true;
+const isLegendary=Object.values(LEGENDARY_SKILLS).some(l=>l.id===id);
+towers.forEach(t=>t.applySkills());
+saveAccount();renderSkillTreeUI();updateLobbyUI();
+showSkillToast(s,isLegendary);
+if(isLegendary)checkAllLegendaryAchievement();
+}
+function refundSkill(id){
+if(!playerAccount.unlockedSkills[id])return;
+for(const t in SKILL_TREES){for(const b of SKILL_TREES[t].branches){for(const s of b.skills){if(s.requires===id&&playerAccount.unlockedSkills[s.id]){alert("無法退還：有後續技能依賴此技能。");return;}}}}
+for(const t in LEGENDARY_SKILLS){const leg=LEGENDARY_SKILLS[t];if(leg.requires===id&&playerAccount.unlockedSkills[leg.id]){alert("無法退還：傳奇技能依賴此技能。請先退還傳奇技能。");return;}}
+const s=getSkillById(id);
+playerAccount.skillPoints+=s.cost;
+delete playerAccount.unlockedSkills[id];
+towers.forEach(t=>t.applySkills());
+saveAccount();renderSkillTreeUI();updateLobbyUI();
+}
+function showSkillToast(s,isLegendary){
+const t=document.createElement('div');
+if(isLegendary){
+t.className='achieve-toast bg-gradient-to-r from-yellow-800 via-amber-700 to-orange-700 border-2 border-yellow-300 rounded-xl p-3 shadow-2xl flex items-center gap-3 min-w-[280px] max-w-[90vw]';
+t.innerHTML=`<span class="text-xl font-black text-yellow-200 w-8 text-center">${s.icon}</span><div class="text-left flex-1"><p class="text-[10px] text-yellow-200 font-black tracking-widest">傳奇技能解鎖</p><p class="text-base font-black text-white">${s.name}</p><p class="text-[10px] text-yellow-100">${s.desc}</p></div>`;
+}else{
+t.className='achieve-toast bg-gradient-to-r from-purple-900 to-violet-800 border-2 border-purple-400 rounded-xl p-3 shadow-2xl flex items-center gap-3 min-w-[240px] max-w-[90vw]';
+t.innerHTML=`<span class="text-xl font-black text-purple-300 w-8 text-center">${s.icon}</span><div class="text-left flex-1"><p class="text-[10px] text-purple-300 font-black tracking-widest">技能解鎖</p><p class="text-sm font-bold text-white">${s.name}</p><p class="text-[10px] text-purple-200">${s.desc}</p></div>`;
+}
+document.getElementById('achieve-toast-container').appendChild(t);
+setTimeout(()=>t.remove(),4300);
+}
+function checkAllLegendaryAchievement(){
+const total=Object.keys(LEGENDARY_SKILLS).length;
+const unlocked=Object.values(LEGENDARY_SKILLS).filter(l=>playerAccount.unlockedSkills[l.id]).length;
+if(unlocked>=5)unlockAchievement('legendary_5');
+if(unlocked>=total)unlockAchievement('legendary_all');
+}
+
+// ============================================================
+// 成就
+// ============================================================
+const ACHIEVE_KEY='allstar_td_achievements_v1';
+const ACHIEVEMENTS={
+first_blood:{name:'首殺',desc:'擊殺第一隻敵人',cat:'battle',icon:'血',reward:20,goal:1},
+wave_10:{name:'十波老手',desc:'通過第 10 波',cat:'battle',icon:'十',reward:50,goal:1},
+wave_20:{name:'挑戰達成',desc:'完成 20 波挑戰模式',cat:'battle',icon:'廿',reward:100,goal:1},
+endless_30:{name:'無盡旅人',desc:'無盡模式撐過第 30 波',cat:'battle',icon:'盡',reward:150,goal:1},
+boss_slayer:{name:'屠龍者',desc:'擊殺一隻超級Boss',cat:'battle',icon:'屠',reward:80,goal:1},
+perfect_win:{name:'完美防守',desc:'基地零損血通關任一模式',cat:'battle',icon:'全',reward:200,goal:1},
+nightmare_win:{name:'噩夢征服者',desc:'以噩夢難度通關',cat:'battle',icon:'噩',reward:500,goal:1},
+hard_map_win:{name:'逆風而行',desc:'在困難地圖投票下通關',cat:'battle',icon:'逆',reward:250,goal:1},
+air_slayer:{name:'獵空者',desc:'用對空塔擊殺 20 隻空氣怪',cat:'battle',icon:'空',reward:80,goal:20},
+kill_500:{name:'屠殺機器',desc:'累計擊殺 500 隻敵人',cat:'battle',icon:'斬',reward:200,goal:500},
+build_10:{name:'小小建築師',desc:'單場蓋出 10 座塔',cat:'tower',icon:'築',reward:30,goal:10},
+max_upgrade:{name:'滿級大師',desc:'將任一塔升到 Lv.5',cat:'tower',icon:'滿',reward:60,goal:1},
+gold_mine_max:{name:'理財高手',desc:'4 座金庫塔都達到 Lv.5',cat:'tower',icon:'財',reward:150,goal:1},
+all_towers_type:{name:'全明星陣容',desc:'單場同時使用 5 種不同塔',cat:'tower',icon:'陣',reward:100,goal:5},
+speed_3_win:{name:'光速指揮官',desc:'以 3 倍速通關任一模式',cat:'tower',icon:'速',reward:200,goal:1},
+unlock_5:{name:'新星崛起',desc:'解鎖 5 種防禦塔',cat:'collect',icon:'啟',reward:30,goal:5},
+unlock_all:{name:'全員到齊',desc:'解鎖全部 10 種防禦塔',cat:'collect',icon:'齊',reward:300,goal:10},
+get_ssr:{name:'至尊降臨',desc:'抽到 SSR 塔至尊神塔',cat:'collect',icon:'帝',reward:200,goal:1},
+crystals_5000:{name:'星碎大亨',desc:'累積持有 5000 星碎',cat:'collect',icon:'富',reward:100,goal:5000},
+buy_speed3:{name:'尊爵不凡',desc:'永久解鎖三倍速特權',cat:'collect',icon:'尊',reward:150,goal:1},
+no_tower_wave5:{name:'空手道',desc:'不使用任何塔通過第 5 波',cat:'special',icon:'空',reward:300,goal:1},
+legendary_5:{name:'傳奇收藏家',desc:'解鎖 5 個傳奇技能',cat:'special',icon:'傳',reward:500,goal:5},
+legendary_all:{name:'傳奇宗師',desc:'解鎖全部 10 個傳奇技能',cat:'special',icon:'神',reward:2000,goal:10}
+};
+const ACHIEVE_CATEGORIES={battle:{name:'戰鬥'},tower:{name:'塔防'},collect:{name:'收集'},special:{name:'特殊'}};
+let achievementData={unlocked:{},progress:{},stats:{totalKills:0,airKills:0,maxWaveReached:0,gamesPlayed:0,winsCount:0}};
+
+function loadAchievements(){try{const r=localStorage.getItem(ACHIEVE_KEY);if(r){const s=JSON.parse(r);achievementData.unlocked=s.unlocked||{};achievementData.progress=s.progress||{};achievementData.stats=Object.assign(achievementData.stats,s.stats||{});}}catch(e){}}
+function saveAchievements(){try{localStorage.setItem(ACHIEVE_KEY,JSON.stringify(achievementData));}catch(e){}}
+function isAchieveUnlocked(id){return !!achievementData.unlocked[id];}
+function updateAchieveProgress(id,val,cum){if(!ACHIEVEMENTS[id])return;if(isAchieveUnlocked(id))return;const cur=cum?Math.max(achievementData.progress[id]||0,val):val;achievementData.progress[id]=cur;if(cur>=ACHIEVEMENTS[id].goal)unlockAchievement(id);else saveAchievements();}
+function unlockAchievement(id){
+if(!ACHIEVEMENTS[id])return;if(isAchieveUnlocked(id))return;
+achievementData.unlocked[id]=Date.now();achievementData.progress[id]=ACHIEVEMENTS[id].goal;
+const a=ACHIEVEMENTS[id];
+playerAccount.crystals+=a.reward;
+playerAccount.skillPoints+=3;
+saveAchievements();saveAccount();updateLobbyUI();showAchievementToast(a);renderAchievementsUI();
+}
+function showAchievementToast(a){
+const c=document.getElementById('achieve-toast-container');if(!c)return;
+const t=document.createElement('div');
+t.className='achieve-toast bg-gradient-to-r from-yellow-900 to-amber-800 border-2 border-yellow-400 rounded-xl p-3 shadow-2xl flex items-center gap-3 min-w-[260px] max-w-[90vw]';
+t.innerHTML=`<span class="text-xl font-black text-yellow-300 w-8 text-center">${a.icon}</span><div class="text-left flex-1"><p class="text-[10px] text-yellow-300 font-black tracking-widest">成就達成</p><p class="text-sm font-bold text-white">${a.name}</p><p class="text-[10px] text-yellow-200">+${a.reward} 星碎 · +3 SP</p></div>`;
+c.appendChild(t);setTimeout(()=>t.remove(),4300);
+}
+function updateAchieveSummary(){
+const total=Object.keys(ACHIEVEMENTS).length;
+const unlocked=Object.keys(achievementData.unlocked).length;
+const el=document.getElementById('achieve-count');const bar=document.getElementById('achieve-bar');
+if(el)el.innerText=unlocked;if(bar)bar.style.width=`${(unlocked/total)*100}%`;
+const pc=document.getElementById('achieve-page-count');const pt=document.getElementById('achieve-page-total');
+if(pc)pc.innerText=unlocked;if(pt)pt.innerText=total;
+}
+let currentAchieveFilter='all';
+function renderAchievementsUI(){
+const list=document.getElementById('achievements-list');if(!list)return;
+let entries=Object.entries(ACHIEVEMENTS);
+if(currentAchieveFilter!=='all')entries=entries.filter(([id,a])=>a.cat===currentAchieveFilter);
+entries.sort((a,b)=>{const ua=isAchieveUnlocked(a[0])?0:1;const ub=isAchieveUnlocked(b[0])?0:1;return ua-ub;});
+list.innerHTML='';
+entries.forEach(([id,a])=>{
+const unlocked=isAchieveUnlocked(id);
+const progress=achievementData.progress[id]||0;
+const pct=Math.min(100,Math.floor((progress/a.goal)*100));
+const item=document.createElement('div');
+item.className=`p-3 rounded-xl border-2 flex items-center gap-3 transition ${unlocked?'bg-gradient-to-r from-yellow-900/50 to-amber-900/30 border-yellow-500/70 achieve-unlocked':'bg-slate-900/60 border-slate-800'}`;
+item.innerHTML=`<div class="text-lg font-black ${unlocked?'text-yellow-300':'text-slate-500'} w-8 text-center">${a.icon}</div><div class="flex-1 min-w-0 text-left"><div class="flex items-center gap-2 flex-wrap"><h4 class="text-sm font-bold ${unlocked?'text-yellow-300':'text-white'} truncate">${a.name}</h4>${unlocked?'<span class="text-[9px] bg-yellow-500 text-black font-black px-1.5 py-0.5 rounded">已解鎖</span>':''}<span class="text-[9px] text-slate-500">${ACHIEVE_CATEGORIES[a.cat].name}</span></div><p class="text-[11px] text-slate-400 mt-0.5">${a.desc}</p>${!unlocked&&a.goal>1?`<div class="mt-1.5 flex items-center gap-2"><div class="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden"><div class="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" style="width:${pct}%;"></div></div><span class="text-[10px] text-slate-400 font-mono">${progress}/${a.goal}</span></div>`:''}</div><div class="text-right shrink-0"><p class="text-[10px] text-slate-400">獎勵</p><p class="text-sm font-black ${unlocked?'text-yellow-400':'text-slate-500'}">${a.reward}</p><p class="text-[10px] text-purple-400">+3 SP</p></div>`;
+list.appendChild(item);
+});
+updateAchieveSummary();
+}
+function openAchievements(){document.getElementById('achievements-screen').classList.remove('hidden');currentAchieveFilter='all';document.querySelectorAll('.achieve-tab').forEach(t=>{if(t.dataset.cat==='all')t.className='achieve-tab px-3 py-1.5 text-xs font-bold rounded-lg bg-yellow-600 text-white shrink-0';else t.className='achieve-tab px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 shrink-0';});renderAchievementsUI();}
+function closeAchievements(){document.getElementById('achievements-screen').classList.add('hidden');}
+document.addEventListener('click',e=>{const tab=e.target.closest('.achieve-tab');if(!tab)return;currentAchieveFilter=tab.dataset.cat;document.querySelectorAll('.achieve-tab').forEach(t=>{t.className='achieve-tab px-3 py-1.5 text-xs font-bold rounded-lg bg-slate-800 text-slate-400 hover:bg-slate-700 shrink-0';});tab.className='achieve-tab px-3 py-1.5 text-xs font-bold rounded-lg bg-yellow-600 text-white shrink-0';renderAchievementsUI();});
+
+// ============================================================
+// 存檔
+// ============================================================
+const STORAGE_KEY='allstar_td_save_v1';
+function loadAccount(){
+try{const raw=localStorage.getItem(STORAGE_KEY);if(raw){const s=JSON.parse(raw);if(typeof s.crystals==='number')playerAccount.crystals=s.crystals;if(Array.isArray(s.unlockedTowers)&&s.unlockedTowers.length>0)playerAccount.unlockedTowers=s.unlockedTowers.filter(k=>TOWER_TYPES[k]);if(Array.isArray(s.equippedTowers)&&s.equippedTowers.length>0)playerAccount.equippedTowers=s.equippedTowers.filter(k=>TOWER_TYPES[k]);playerAccount.has_triple_speed=!!s.has_triple_speed;if(typeof s.skillPoints==='number')playerAccount.skillPoints=s.skillPoints;if(s.unlockedSkills)playerAccount.unlockedSkills=s.unlockedSkills;}}catch(e){}
+}
+function saveAccount(){
+try{localStorage.setItem(STORAGE_KEY,JSON.stringify({crystals:playerAccount.crystals,unlockedTowers:playerAccount.unlockedTowers,equippedTowers:playerAccount.equippedTowers,has_triple_speed:playerAccount.has_triple_speed,skillPoints:playerAccount.skillPoints,unlockedSkills:playerAccount.unlockedSkills}));}catch(e){}
+}
+
+let selectedGameMode='challenge';
+let selectedDifficulty='hardcore';
+let wave=1,gold=150,baseHp=100;
+const MAX_BASE_HP=100;
+let enemies=[],towers=[],projectiles=[],particles=[];
+let diffConfig={startGold:150,hpMult:1.2,goldRewardMult:1.0,speedMult:1.0};
+let gameSpeed=1,enemiesToSpawn=0,enemySpawnCount=0,spawnTimer=0,waveTimer=0,isWaveActive=false,autoWave=false;
+let sessionStats={kills:0,airKills:0,towersBuilt:0,towerTypesUsed:new Set(),usedNoTower:true,hurtBase:false,mapVoteHard:false};
+let cursorX=10,cursorY=7,activeMenu=null,menuGridX=-1,menuGridY=-1,selectedTower=null;
+
+const GOLDMINE_INCOME=[20,40,70,110,160,230];
+
+const TOWER_TYPES={
+star:{emoji:'星',name:'明星塔',cost:50,color:'#fef08a',projectileColor:'#fbbf24',baseDmg:15,baseRange:120,baseCooldown:1.0,rarity:'N',rarityColor:'text-slate-300',desc:"單體高DPS速射 (對地)",upgrades:[{cost:40,dmg:25,range:130},{cost:80,dmg:40,range:150},{cost:150,dmg:75,range:175}]},
+fire:{emoji:'火',name:'爆發塔',cost:80,color:'#f87171',projectileColor:'#ef4444',baseDmg:35,baseRange:80,baseCooldown:1.5,rarity:'N',rarityColor:'text-slate-300',desc:"AOE爆炸 + 範圍燃燒 (對地)",upgrades:[{cost:60,dmg:55,range:90},{cost:120,dmg:85,range:100},{cost:200,dmg:135,range:110}]},
+ice:{emoji:'冰',name:'冰霜塔',cost:70,color:'#93c5fd',projectileColor:'#60a5fa',baseDmg:8,baseRange:140,baseCooldown:1.2,rarity:'N',rarityColor:'text-slate-300',desc:"範圍緩速50% (對地)",upgrades:[{cost:50,dmg:15,range:160},{cost:100,dmg:25,range:180},{cost:180,dmg:45,range:200}]},
+goldmine:{emoji:'金',name:'金庫塔',cost:100,color:'#f59e0b',projectileColor:'#fbbf24',baseDmg:0,baseRange:0,baseCooldown:999,rarity:'N',rarityColor:'text-slate-300',desc:"每波結束提供額外理財金幣",upgrades:[{cost:60,dmg:0,range:0},{cost:100,dmg:0,range:0},{cost:160,dmg:0,range:0},{cost:250,dmg:0,range:0},{cost:400,dmg:0,range:0}]},
+lightning:{emoji:'電',name:'閃電塔',cost:95,color:'#e9d5ff',projectileColor:'#a855f7',baseDmg:20,baseRange:120,baseCooldown:1.1,rarity:'R',rarityColor:'text-purple-400 font-bold',desc:"閃電多重連鎖彈跳 (對地)",upgrades:[{cost:70,dmg:35,range:130},{cost:130,dmg:60,range:150},{cost:220,dmg:110,range:170}]},
+blackhole:{emoji:'洞',name:'黑洞塔',cost:110,color:'#c084fc',projectileColor:'#6b21a8',baseDmg:18,baseRange:110,baseCooldown:1.6,rarity:'R',rarityColor:'text-purple-400 font-bold',desc:"引力波：強大聚怪傷害 (對地)",upgrades:[{cost:90,dmg:32,range:120},{cost:160,dmg:58,range:135},{cost:250,dmg:105,range:150}]},
+hunter:{emoji:'獵',name:'獵手塔',cost:85,color:'#fed7aa',projectileColor:'#f97316',baseDmg:30,baseRange:170,baseCooldown:1.3,rarity:'R',rarityColor:'text-purple-400 font-bold',desc:"超遠狙擊：可對空擊落空氣怪",upgrades:[{cost:65,dmg:55,range:190},{cost:110,dmg:90,range:210},{cost:190,dmg:150,range:240}]},
+sun:{emoji:'陽',name:'烈陽塔',cost:100,color:'#fef08a',projectileColor:'#eab308',baseDmg:22,baseRange:90,baseCooldown:0.8,rarity:'SR',rarityColor:'text-orange-400 font-extrabold',desc:"身邊360度近戰灼燒光環 (對地)",upgrades:[{cost:80,dmg:40,range:100},{cost:140,dmg:75,range:115},{cost:240,dmg:125,range:130}]},
+toxic:{emoji:'毒',name:'毒藤塔',cost:90,color:'#bbf7d0',projectileColor:'#22c55e',baseDmg:16,baseRange:120,baseCooldown:1.2,rarity:'SR',rarityColor:'text-orange-400 font-extrabold',desc:"中毒：持續掉血與爆屍 (對地)",upgrades:[{cost:70,dmg:28,range:130},{cost:130,dmg:50,range:150},{cost:210,dmg:90,range:170}]},
+emperor:{emoji:'帝',name:'至尊神塔',cost:180,color:'#fef08a',projectileColor:'#fbbf24',baseDmg:45,baseRange:180,baseCooldown:0.6,rarity:'SSR',rarityColor:'text-yellow-400 font-black',desc:"連鎖電擊+冰凍！可對空對地全能射擊",upgrades:[{cost:150,dmg:80,range:200},{cost:260,dmg:135,range:220},{cost:450,dmg:230,range:250}]}
+};
+
+const DRAW_POOL=[{type:'lightning',rate:25},{type:'blackhole',rate:22},{type:'hunter',rate:22},{type:'sun',rate:15},{type:'toxic',rate:12},{type:'emperor',rate:4}];
+
+function getUpgradeData(type,currentLevel){
+const typeData=TOWER_TYPES[type];
+const nextLevel=currentLevel+1;
+const idx=currentLevel-1;
+if(type==='goldmine'){
+if(idx<typeData.upgrades.length)return{cost:typeData.upgrades[idx].cost,income:GOLDMINE_INCOME[nextLevel-1]};
+const extra=idx-typeData.upgrades.length;
+const lastUp=typeData.upgrades[typeData.upgrades.length-1];
+const lastIncome=GOLDMINE_INCOME[GOLDMINE_INCOME.length-1];
+return{cost:Math.round(lastUp.cost*Math.pow(1.8,extra+1)/10)*10,income:Math.round(lastIncome*Math.pow(1.35,extra+1))};
+}
+if(idx<typeData.upgrades.length)return typeData.upgrades[idx];
+const extra=idx-typeData.upgrades.length;
+const lastUp=typeData.upgrades[typeData.upgrades.length-1];
+return{cost:Math.round(lastUp.cost*Math.pow(1.8,extra+1)/10)*10,dmg:Math.round(lastUp.dmg*Math.pow(1.55,extra+1)),range:Math.min(400,lastUp.range+10*(extra+1))};
+}
+function getGoldmineIncome(level){
+const bonus=getTowerSkillBonus('goldmine');
+let base;
+if(level<=GOLDMINE_INCOME.length)base=GOLDMINE_INCOME[level-1];
+else{const extra=level-GOLDMINE_INCOME.length;base=Math.round(GOLDMINE_INCOME[GOLDMINE_INCOME.length-1]*Math.pow(1.35,extra));}
+let income=Math.round(base*bonus.incomeMult);
+if(hasLegendary('goldmine'))income+=50;
+return income;
+}
+function getTowerTotalInvestment(tower){
+const typeData=TOWER_TYPES[tower.type];
+let total=typeData.cost;
+for(let lvl=1;lvl<tower.level;lvl++)total+=getUpgradeData(tower.type,lvl).cost;
+return total;
+}
+
+let mapGrid=[];
+const pathCoords=[
+{x:0,y:3},{x:1,y:3},{x:2,y:3},{x:3,y:3},{x:4,y:3},{x:5,y:3},
+{x:5,y:4},{x:5,y:5},{x:5,y:6},{x:6,y:6},{x:7,y:6},{x:8,y:6},
+{x:9,y:6},{x:10,y:6},{x:10,y:7},{x:10,y:8},{x:10,y:9},{x:10,y:10},
+{x:9,y:10},{x:8,y:10},{x:7,y:10},{x:6,y:10},{x:5,y:10},{x:4,y:10},
+{x:3,y:10},{x:2,y:10},{x:2,y:11},{x:2,y:12},{x:2,y:13},{x:3,y:13},
+{x:4,y:13},{x:5,y:13},{x:6,y:13},{x:7,y:13},{x:8,y:13},{x:9,y:13},
+{x:10,y:13},{x:11,y:13},{x:12,y:13},{x:13,y:13},{x:14,y:13},{x:15,y:13},
+{x:16,y:13},{x:17,y:13},{x:18,y:13},{x:19,y:13}
+];
+const BASE_POS=pathCoords[pathCoords.length-1];
+
+function updateLobbyUI(){
+document.getElementById('lobby-crystals').innerText=playerAccount.crystals;
+document.getElementById('shop-crystals').innerText=playerAccount.crystals;
+document.getElementById('loadout-count-display').innerText=playerAccount.equippedTowers.length;
+document.getElementById('skill-points-display').innerText=playerAccount.skillPoints;
+const speed3Btn=document.getElementById('btn-buy-speed3-lobby');
+if(playerAccount.has_triple_speed){speed3Btn.innerText="已擁有";speed3Btn.className="py-1.5 px-3 bg-gray-700 text-gray-400 font-bold text-xs rounded-lg border border-gray-600 shrink-0 cursor-default";speed3Btn.disabled=true;}
+else{speed3Btn.innerText="5000 星碎解鎖";speed3Btn.className="py-1.5 px-3 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg shadow border border-purple-400 shrink-0";speed3Btn.disabled=false;}
+const devBadge=document.getElementById('dev-badge');if(devBadge)devBadge.classList.toggle('hidden',!devModeActive);
+updateAchieveSummary();
+let totalUnlocked=0;
+for(const t in SKILL_TREES)for(const b of SKILL_TREES[t].branches)for(const s of b.skills)if(playerAccount.unlockedSkills[s.id])totalUnlocked++;
+const suc=document.getElementById('skill-unlocked-count');if(suc)suc.innerText=totalUnlocked;
+const legCount=Object.values(LEGENDARY_SKILLS).filter(l=>playerAccount.unlockedSkills[l.id]).length;
+const lc=document.getElementById('legendary-count');if(lc)lc.innerText=legCount;
+if(playerAccount.crystals>=5000)unlockAchievement('crystals_5000');
+}
+
+// ============================================================
+// 技能樹 UI
+// ============================================================
+let currentSkillTower='star';
+
+function openSkillTree(){document.getElementById('skilltree-screen').classList.remove('hidden');currentSkillTower='star';renderTowerSelector();renderSkillTreeUI();}
+function closeSkillTree(){document.getElementById('skilltree-screen').classList.add('hidden');}
+function renderTowerSelector(){
+const sel=document.getElementById('tower-selector');sel.innerHTML='';
+Object.keys(SKILL_TREES).forEach(type=>{
+const tree=SKILL_TREES[type];
+const btn=document.createElement('button');
+const active=type===currentSkillTower;
+const unlocked=playerAccount.unlockedTowers.includes(type);
+btn.className=`flex flex-col items-center p-2 rounded-xl border-2 shrink-0 min-w-[60px] transition ${active?'bg-violet-900/60 border-violet-400 scale-105':'bg-slate-900 border-slate-700 hover:border-violet-500'} ${!unlocked?'opacity-50':''}`;
+btn.onclick=()=>{currentSkillTower=type;renderTowerSelector();renderSkillTreeUI();};
+const towerSkills=getAllSkillsOfTower(type);
+const unlockedCount=towerSkills.filter(s=>playerAccount.unlockedSkills[s.id]).length;
+const hasLeg=hasLegendary(type);
+btn.innerHTML=`<span class="text-lg font-black text-white">${tree.emoji}</span><span class="text-[9px] font-bold text-white mt-0.5">${tree.name.replace('塔','')}</span><span class="text-[8px] text-violet-300 font-mono">${unlockedCount}/9 ${hasLeg?'傳':''}</span>`;
+sel.appendChild(btn);
+});
+}
+function renderSkillTreeUI(){
+const content=document.getElementById('skilltree-content');
+const tree=SKILL_TREES[currentSkillTower];
+if(!tree){content.innerHTML='';return;}
+document.getElementById('skilltree-points').innerText=playerAccount.skillPoints;
+const towerUnlocked=playerAccount.unlockedTowers.includes(currentSkillTower);
+const bonus=getTowerSkillBonus(currentSkillTower);
+let html='';
+if(!towerUnlocked)html+=`<div class="bg-yellow-900/30 border border-yellow-600/50 rounded-xl p-3 text-center text-yellow-300 text-xs mb-3">此塔尚未解鎖，請先前往商城抽卡解鎖。</div>`;
+
+html+=`<div class="bg-slate-950 border border-violet-500/30 rounded-xl p-3 mb-3 text-left"><p class="text-[11px] font-bold text-violet-300 mb-1">目前 ${tree.name} 技能加成：</p><div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[10px] font-mono">
+<div class="text-slate-400">傷害: <span class="text-white">${((bonus.dmgMult-1)*100).toFixed(0)}%</span></div>
+<div class="text-slate-400">冷卻: <span class="text-white">${((bonus.cdMult-1)*100).toFixed(0)}%</span></div>
+<div class="text-slate-400">射程: <span class="text-white">+${bonus.rangeAdd}</span></div>
+${bonus.critChance>0?`<div class="text-slate-400">暴擊: <span class="text-yellow-300">${(bonus.critChance*100).toFixed(0)}% ×${bonus.critMult}</span></div>`:''}
+${bonus.aoeBonus>0?`<div class="text-slate-400">AOE: <span class="text-orange-300">+${bonus.aoeBonus}</span></div>`:''}
+${bonus.chainBonus>0?`<div class="text-slate-400">連鎖: <span class="text-purple-300">+${bonus.chainBonus}</span></div>`:''}
+${bonus.burnBonus>1?`<div class="text-slate-400">燃燒: <span class="text-red-300">+${((bonus.burnBonus-1)*100).toFixed(0)}%</span></div>`:''}
+${bonus.incomeMult>1?`<div class="text-slate-400">收入: <span class="text-yellow-300">+${((bonus.incomeMult-1)*100).toFixed(0)}%</span></div>`:''}
+${bonus.slowAdd>0?`<div class="text-slate-400">緩速: <span class="text-blue-300">+${bonus.slowAdd}s</span></div>`:''}
+${bonus.slowBonus>0?`<div class="text-slate-400">緩速幅: <span class="text-blue-300">+${(bonus.slowBonus*100).toFixed(0)}%</span></div>`:''}
+${bonus.pierce>0?`<div class="text-slate-400">穿透: <span class="text-orange-300">${bonus.pierce}</span></div>`:''}
+${bonus.freezeChance>0?`<div class="text-slate-400">凍結: <span class="text-cyan-300">${(bonus.freezeChance*100).toFixed(0)}%</span></div>`:''}
+${bonus.executeChance>0?`<div class="text-slate-400">處決: <span class="text-red-300">${(bonus.executeChance*100).toFixed(0)}%</span></div>`:''}
+${bonus.bossBonus>0?`<div class="text-slate-400">Boss: <span class="text-yellow-300">+${(bonus.bossBonus*100).toFixed(0)}%</span></div>`:''}
+${bonus.burnStack>1?`<div class="text-slate-400">燃燒層: <span class="text-red-300">${bonus.burnStack}</span></div>`:''}
+${bonus.deathExplode?`<div class="text-red-300">死亡爆炸</div>`:''}
+${bonus.noChainFalloff?`<div class="text-purple-300">無衰減連鎖</div>`:''}
+</div></div>`;
+
+html+='<div class="grid grid-cols-1 sm:grid-cols-3 gap-3">';
+tree.branches.forEach(branch=>{
+const c={red:{bg:'from-red-950/60 to-red-900/40',border:'border-red-500/50',text:'text-red-300',hover:'hover:border-red-400'},blue:{bg:'from-blue-950/60 to-blue-900/40',border:'border-blue-500/50',text:'text-blue-300',hover:'hover:border-blue-400'},purple:{bg:'from-purple-950/60 to-purple-900/40',border:'border-purple-500/50',text:'text-purple-300',hover:'hover:border-purple-400'}}[branch.color]||{};
+html+=`<div class="bg-gradient-to-b ${c.bg} border ${c.border} rounded-2xl p-3"><h3 class="text-xs font-black ${c.text} mb-2 text-center">${branch.name}</h3><div class="space-y-2">`;
+branch.skills.forEach(skill=>{
+const unlocked=!!playerAccount.unlockedSkills[skill.id];
+const canUnlock=canUnlockSkill(skill.id);
+const hasPrereq=!skill.requires||playerAccount.unlockedSkills[skill.requires];
+const isLocked=!hasPrereq;
+let cardClass,statusHtml,btnHtml='';
+if(unlocked){cardClass='bg-violet-900/40 border-2 border-violet-400 rounded-xl p-2.5 skill-unlocked cursor-pointer';statusHtml=`<span class="text-[9px] bg-violet-500 text-white font-black px-1.5 py-0.5 rounded">已解鎖</span>`;btnHtml=`<button onclick="refundSkill('${skill.id}')" class="w-full mt-2 py-1 bg-slate-700 hover:bg-red-700 text-white font-bold text-[9px] rounded transition">退還 +${skill.cost} SP</button>`;}
+else if(isLocked){cardClass='bg-slate-900/60 border-2 border-slate-800 rounded-xl p-2.5 opacity-50';statusHtml=`<span class="text-[9px] text-slate-500">需前置</span>`;}
+else if(canUnlock){cardClass=`bg-slate-900 border-2 ${c.hover} rounded-xl p-2.5 cursor-pointer transition hover:scale-[1.02]`;statusHtml=`<span class="text-[9px] bg-green-500 text-black font-black px-1.5 py-0.5 rounded">可解鎖</span>`;btnHtml=`<button onclick="unlockSkill('${skill.id}')" class="w-full mt-2 py-1 bg-green-600 hover:bg-green-500 text-white font-bold text-[9px] rounded transition">解鎖 -${skill.cost} SP</button>`;}
+else{cardClass='bg-slate-900/60 border-2 border-slate-700 rounded-xl p-2.5';statusHtml=`<span class="text-[9px] text-yellow-400 font-bold">需 ${skill.cost} SP</span>`;btnHtml=`<button disabled class="w-full mt-2 py-1 bg-slate-800 text-slate-500 font-bold text-[9px] rounded cursor-not-allowed">SP 不足</button>`;}
+html+=`<div class="${cardClass}"><div class="flex items-center justify-between mb-1"><span class="text-base font-black text-white">${skill.icon}</span>${statusHtml}</div><p class="text-[11px] font-bold text-white">${skill.name}</p><p class="text-[10px] text-slate-400 mt-0.5">${skill.desc}</p>${btnHtml}</div>`;
+});
+html+=`</div></div>`;
+});
+html+='</div>';
+
+const leg=LEGENDARY_SKILLS[currentSkillTower];
+if(leg){
+const unlocked=!!playerAccount.unlockedSkills[leg.id];
+const prereq=!leg.requires||playerAccount.unlockedSkills[leg.requires];
+const canUnlock=!unlocked&&prereq&&playerAccount.skillPoints>=leg.cost;
+let cardClass,statusHtml,btnHtml='';
+if(unlocked){
+cardClass='bg-gradient-to-r from-yellow-900/70 via-amber-900/60 to-orange-900/60 border-2 border-yellow-300 rounded-2xl p-4 legendary-unlocked';
+statusHtml=`<span class="text-[10px] bg-yellow-300 text-black font-black px-2 py-0.5 rounded">已精通</span>`;
+btnHtml=`<button onclick="refundSkill('${leg.id}')" class="mt-3 px-3 py-1.5 bg-slate-800 hover:bg-red-800 text-white font-bold text-[10px] rounded transition">退還 +${leg.cost} SP</button>`;
+}else if(!prereq){
+cardClass='bg-slate-900/60 border-2 border-slate-800 rounded-2xl p-4 opacity-50';
+statusHtml=`<span class="text-[10px] text-slate-500">需完成專精 Lv.3</span>`;
+}else if(canUnlock){
+cardClass='bg-gradient-to-r from-yellow-950/60 via-amber-950/50 to-orange-950/50 border-2 border-yellow-400 rounded-2xl p-4 legendary-available cursor-pointer';
+statusHtml=`<span class="text-[10px] bg-green-500 text-black font-black px-2 py-0.5 rounded">可解鎖</span>`;
+btnHtml=`<button onclick="unlockSkill('${leg.id}')" class="mt-3 px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 text-white font-black text-xs rounded-lg shadow-lg transition">解鎖傳奇 -${leg.cost} SP</button>`;
+}else{
+cardClass='bg-slate-900/60 border-2 border-yellow-700/50 rounded-2xl p-4';
+statusHtml=`<span class="text-[10px] text-yellow-400 font-bold">需 ${leg.cost} SP</span>`;
+btnHtml=`<button disabled class="mt-3 px-3 py-1.5 bg-slate-800 text-slate-500 font-bold text-[10px] rounded cursor-not-allowed">SP 不足（還差 ${leg.cost-playerAccount.skillPoints} SP）</button>`;
+}
+html+=`<div class="mt-3 ${cardClass}">
+<div class="flex items-center gap-3">
+<span class="text-xl font-black text-yellow-300 w-8 text-center">${leg.icon}</span>
+<div class="flex-1">
+<div class="flex items-center gap-2 flex-wrap">
+<p class="text-base font-black ${unlocked?'text-yellow-300':'text-white'}">${leg.name}</p>
+${statusHtml}
+</div>
+<p class="text-[11px] text-slate-300 mt-1">${leg.desc}</p>
+</div>
+</div>
+<div class="mt-2">${btnHtml}</div>
+</div>`;
+}
+content.innerHTML=html;
+}
+
+// ============================================================
+// 庫存 / 商城 / 模式
+// ============================================================
+function openInventory(){document.getElementById('inventory-screen').classList.remove('hidden');renderInventoryUI();updateLobbyUI();}
+function closeInventory(){if(playerAccount.equippedTowers.length===0){alert("進入戰場前請至少裝備 1 個防禦塔。");return;}document.getElementById('inventory-screen').classList.add('hidden');saveAccount();updateLobbyUI();}
+function renderInventoryUI(){
+const sc=document.getElementById('equipped-slots');const lc=document.getElementById('inventory-list');
+document.getElementById('loadout-num-text').innerText=`${playerAccount.equippedTowers.length} / 5`;
+sc.innerHTML='';
+for(let i=0;i<5;i++){
+const key=playerAccount.equippedTowers[i];
+const slot=document.createElement('div');
+slot.className="border-2 border-dashed border-slate-700 rounded-xl p-1 flex flex-col items-center justify-center relative bg-slate-900 min-h-[60px]";
+if(key){const char=TOWER_TYPES[key];slot.className="border-2 border-blue-500 rounded-xl p-1 flex flex-col items-center justify-center relative bg-slate-800 shadow-md cursor-pointer hover:border-red-400 group transition";slot.onclick=()=>unequipTower(key);slot.innerHTML=`<span class="text-lg font-black text-white pointer-events-none">${char.emoji}</span><span class="text-[9px] font-bold text-white mt-0.5 pointer-events-none w-full text-center truncate">${char.name}</span><span class="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">X</span>`;}
+else{slot.innerHTML=`<span class="text-slate-600 text-[10px] font-bold">空槽</span>`;}
+sc.appendChild(slot);
+}
+lc.innerHTML='';
+playerAccount.unlockedTowers.forEach(key=>{
+const char=TOWER_TYPES[key];
+const isEquipped=playerAccount.equippedTowers.includes(key);
+const hasLeg=hasLegendary(key);
+const item=document.createElement('div');
+item.className=`p-1.5 sm:p-2 rounded-xl border flex flex-col items-center justify-between cursor-pointer transition ${isEquipped?'bg-slate-800 border-blue-500/50 opacity-50':'bg-slate-900 border-slate-700 hover:border-yellow-400 hover:scale-105'}`;
+item.onclick=()=>{if(!isEquipped)equipTower(key);};
+item.innerHTML=`<span class="text-xl font-black text-white">${char.emoji}</span><span class="text-[10px] sm:text-xs font-bold text-white mt-1 w-full text-center truncate">${char.name}</span><span class="text-[9px] ${char.rarityColor}">${char.rarity} ${hasLeg?'傳':''}</span><span class="text-[9px] mt-0.5 font-bold ${isEquipped?'text-blue-400':'text-green-400'}">${isEquipped?'已裝備':'點擊裝備'}</span>`;
+lc.appendChild(item);
+});
+}
+function equipTower(key){if(playerAccount.equippedTowers.length>=5){alert("備戰攜帶欄已滿。");return;}if(!playerAccount.equippedTowers.includes(key)){playerAccount.equippedTowers.push(key);renderInventoryUI();updateLobbyUI();saveAccount();}}
+function unequipTower(key){if(playerAccount.equippedTowers.length<=1){alert("至少需要裝備 1 個防禦塔。");return;}playerAccount.equippedTowers=playerAccount.equippedTowers.filter(k=>k!==key);renderInventoryUI();updateLobbyUI();saveAccount();}
+function openShop(){document.getElementById('shop-screen').classList.remove('hidden');resetAltar();renderUnlockedList();updateLobbyUI();}
+function closeShop(){document.getElementById('shop-screen').classList.add('hidden');resetAltar();saveAccount();updateLobbyUI();}
+function renderUnlockedList(){
+const lc=document.getElementById('unlocked-list');lc.innerHTML='';
+Object.keys(TOWER_TYPES).forEach(key=>{
+const char=TOWER_TYPES[key];const hasUnlocked=playerAccount.unlockedTowers.includes(key);const hasLeg=hasLegendary(key);
+const item=document.createElement('div');
+item.className=`p-1.5 sm:p-2 rounded-lg flex items-center justify-between border ${hasUnlocked?'bg-slate-800 border-slate-700':'bg-slate-900 border-slate-950 opacity-40'}`;
+item.innerHTML=`<div class="flex items-center gap-1.5 sm:gap-2"><span class="text-base font-black text-white">${char.emoji}</span><div class="text-left"><h4 class="text-[10px] sm:text-xs font-bold ${hasUnlocked?'text-white':'text-gray-500'}">${char.name} ${hasLeg?'[傳]':''}</h4><span class="text-[9px] ${char.rarityColor}">${char.rarity}</span></div></div><span class="text-[9px] sm:text-[10px] ${hasUnlocked?'text-green-400 font-bold':'text-slate-500'}">${hasUnlocked?'已解鎖':'未解鎖'}</span>`;
+lc.appendChild(item);
+});
+}
+function selectRandomTower(){const roll=Math.random()*100;let current=0;for(let i=0;i<DRAW_POOL.length;i++){current+=DRAW_POOL[i].rate;if(roll<=current)return DRAW_POOL[i].type;}return 'lightning';}
+function drawCard(count){
+if(isDrawing)return;
+const cost=count===10?900:100;
+if(playerAccount.crystals<cost){alert("星碎不足。");return;}
+isDrawing=true;playerAccount.crystals-=cost;updateLobbyUI();
+document.getElementById('altar-default').classList.add('hidden');
+document.getElementById('draw-results').classList.remove('hidden');
+const cg=document.getElementById('cards-grid');cg.innerHTML='';
+let results=[];for(let i=0;i<count;i++)results.push(selectRandomTower());
+let hasNewUnlock=false;
+results.forEach((key,index)=>{
+const char=TOWER_TYPES[key];const alreadyHas=playerAccount.unlockedTowers.includes(key);
+if(!alreadyHas){playerAccount.unlockedTowers.push(key);hasNewUnlock=true;}else{playerAccount.crystals+=40;}
+if(key==='emperor')unlockAchievement('get_ssr');
+const cb=document.createElement('div');cb.className="card-container h-20 sm:h-24 w-full relative cursor-pointer";
+cb.innerHTML=`<div class="card-inner w-full h-full relative" id="card-${index}"><div class="card-front rounded-lg bg-slate-800 border-2 border-purple-500/50 flex items-center justify-center shadow-lg"><span class="text-base font-black text-purple-300">召</span></div><div class="card-back rounded-lg p-1 flex flex-col items-center justify-between border-2 bg-slate-900 shadow-xl ${char.rarity==='SSR'?'border-yellow-400':char.rarity==='SR'?'border-orange-400':'border-purple-500'}"><span class="text-[9px] sm:text-xs ${char.rarityColor} font-black">${char.rarity}</span><span class="text-lg font-black text-white">${char.emoji}</span><div class="text-[8px] sm:text-[9px] text-center font-bold text-white w-full truncate">${char.name}</div><span class="text-[7px] sm:text-[8px] text-slate-400">${alreadyHas?'+40 星碎':'新解鎖'}</span></div></div>`;
+cg.appendChild(cb);
+setTimeout(()=>{const inner=document.getElementById(`card-${index}`);if(inner)inner.classList.add('card-flipped');},index*120);
+});
+const unlockCount=playerAccount.unlockedTowers.length;
+if(unlockCount>=5)unlockAchievement('unlock_5');
+if(unlockCount>=10)unlockAchievement('unlock_all');
+setTimeout(()=>{isDrawing=false;if(hasNewUnlock){const tip=document.createElement('div');tip.className="text-[10px] sm:text-xs text-green-400 font-bold mt-2 animate-pulse new-tower-tip";tip.textContent="抽到新塔！請至「庫存」將它加入備戰陣容。";const re=document.getElementById('draw-results');if(re&&!re.querySelector('.new-tower-tip'))re.insertBefore(tip,re.firstElementChild);}},count*120+300);
+renderUnlockedList();updateLobbyUI();saveAccount();
+}
+function resetAltar(){isDrawing=false;document.getElementById('altar-default').classList.remove('hidden');document.getElementById('draw-results').classList.add('hidden');if(document.getElementById('cards-grid'))document.getElementById('cards-grid').innerHTML='';const tip=document.querySelector('.new-tower-tip');if(tip)tip.remove();}
+function selectMode(mode){selectedGameMode=mode;const bc=document.getElementById('opt-mode-challenge');const be=document.getElementById('opt-mode-endless');if(mode==='challenge'){bc.className="py-2 px-2 sm:px-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center justify-center bg-blue-900/40 border-blue-500 text-white";be.className="py-2 px-2 sm:px-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center justify-center bg-slate-800 border-slate-700 text-slate-400";}else{bc.className="py-2 px-2 sm:px-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center justify-center bg-slate-800 border-slate-700 text-slate-400";be.className="py-2 px-2 sm:px-4 rounded-xl font-bold border-2 transition-all flex flex-col items-center justify-center bg-blue-900/40 border-blue-500 text-white";}}
+function selectDifficulty(diff){selectedDifficulty=diff;const bE=document.getElementById('opt-diff-easy');const bH=document.getElementById('opt-diff-hardcore');const bN=document.getElementById('opt-diff-nightmare');bE.className="py-1.5 px-1 rounded-xl font-bold border-2 transition-all flex flex-col items-center bg-slate-800 border-slate-700 text-slate-400";bH.className="py-1.5 px-1 rounded-xl font-bold border-2 transition-all flex flex-col items-center bg-slate-800 border-slate-700 text-slate-400";bN.className="py-1.5 px-1 rounded-xl font-bold border-2 transition-all flex flex-col items-center bg-slate-800 border-slate-700 text-slate-400";if(diff==='easy')bE.className="py-1.5 px-1 rounded-xl font-bold border-2 transition-all flex flex-col items-center bg-green-950/40 border-green-500 text-white";else if(diff==='hardcore')bH.className="py-1.5 px-1 rounded-xl font-bold border-2 transition-all flex flex-col items-center bg-yellow-950/40 border-yellow-500 text-white";else if(diff==='nightmare')bN.className="py-1.5 px-1 rounded-xl font-bold border-2 transition-all flex flex-col items-center bg-red-950/40 border-red-500 text-white";}
+
+function initGrid(){mapGrid=[];for(let y=0;y<ROWS;y++){let row=[];for(let x=0;x<COLS;x++)row.push(0);mapGrid.push(row);}pathCoords.forEach(p=>mapGrid[p.y][p.x]=1);mapGrid[BASE_POS.y][BASE_POS.x]=3;}
+function applyDifficultyConfig(){
+if(selectedDifficulty==='easy')diffConfig={startGold:250,hpMult:0.7,goldRewardMult:1.3,speedMult:0.9};
+else if(selectedDifficulty==='hardcore')diffConfig={startGold:150,hpMult:1.2,goldRewardMult:1.0,speedMult:1.0};
+else if(selectedDifficulty==='nightmare')diffConfig={startGold:100,hpMult:1.8,goldRewardMult:0.8,speedMult:1.15};
+if(devOverrides.startGold!==null)diffConfig.startGold=devOverrides.startGold;
+if(devOverrides.hpMult!==null)diffConfig.hpMult=devOverrides.hpMult;
+if(devOverrides.speedMult!==null)diffConfig.speedMult=devOverrides.speedMult;
+if(devOverrides.goldRewardMult!==null)diffConfig.goldRewardMult=devOverrides.goldRewardMult;
+}
+function injectBuildMenu(){
+const menu=document.getElementById('build-menu');menu.innerHTML='';
+playerAccount.equippedTowers.forEach(key=>{
+const char=TOWER_TYPES[key];if(!char)return;
+const hasLeg=hasLegendary(key);
+const btn=document.createElement('button');
+btn.className="build-opt hover:bg-gray-700 p-1 sm:p-2 rounded flex flex-col items-center shrink-0 min-w-[50px] sm:min-w-[65px]";
+btn.setAttribute('data-type',key);
+btn.innerHTML=`<span class="text-lg sm:text-xl font-black text-white pointer-events-none">${char.emoji}${hasLeg?'*':''}</span><span class="text-[9px] sm:text-[10px] text-yellow-300 mt-1 pointer-events-none">${char.name}</span><span class="text-[10px] sm:text-xs text-white font-bold mt-0.5 pointer-events-none">$${char.cost}</span>`;
+menu.appendChild(btn);
+});
+const cancelBtn=document.createElement('button');
+cancelBtn.id="btn-cancel-build";
+cancelBtn.className="hover:bg-red-900/50 p-1 sm:p-2 rounded flex flex-col items-center justify-center text-gray-400 shrink-0 min-w-[40px] sm:min-w-[50px]";
+cancelBtn.innerHTML=`<span class="text-sm font-black pointer-events-none">X</span><span class="text-[9px] sm:text-[10px] mt-1 pointer-events-none">取消</span>`;
+menu.appendChild(cancelBtn);
+}
+function startGame(){
+document.getElementById('home-screen').classList.add('hidden');
+document.getElementById('gameover-screen').classList.add('hidden');
+document.getElementById('victory-screen').classList.add('hidden');
+document.getElementById('game-screen').classList.remove('hidden');
+document.getElementById('btn-pause').innerText='暫停';
+closeMenus();
+sessionStats={kills:0,airKills:0,towersBuilt:0,towerTypesUsed:new Set(),usedNoTower:true,hurtBase:false,mapVoteHard:false};
+applyDifficultyConfig();initGrid();
+wave=1;gold=diffConfig.startGold;baseHp=(devOverrides.baseHp!==null)?devOverrides.baseHp:MAX_BASE_HP;
+enemies=[];towers=[];projectiles=[];particles=[];
+gameSpeed=(devOverrides.gameSpeed!==null)?Math.max(1,Math.min(10,devOverrides.gameSpeed)):1;
+updateSpeedButton();
+isWaveActive=false;waveTimer=4;cursorX=10;cursorY=7;
+const waveMaxLabel=document.getElementById('ui-wave-max');waveMaxLabel.innerText=selectedGameMode==='challenge'?'/20':' (無盡)';
+autoWave=false;
+const btnAuto=document.getElementById('btn-autowave');
+btnAuto.innerText='自動跳波';
+btnAuto.className="hidden sm:inline-block px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-[10px] sm:text-xs font-bold text-white transition shadow border border-gray-500";
+document.getElementById('btn-nextwave').classList.remove('hidden');
+injectBuildMenu();updateUI();
+mapVoteSystem=new MapVoteSystem();
+gameState='voting';
+document.getElementById('vote-screen').classList.remove('hidden');
+cancelAnimationFrame(animationId);
+lastTime=performance.now();
+animationId=requestAnimationFrame(gameLoop);
+}
+function castMapVote(choice){
+mapVoteSystem.cast_vote(choice);mapVoteSystem.finalize_vote();
+if(choice==='hard')sessionStats.mapVoteHard=true;
+document.getElementById('vote-screen').classList.add('hidden');
+gameState='playing';lastTime=performance.now();
+const msg=choice==='hard'?"困難模式已啟用！(怪物血量 x2, 速度 x3)":"普通模式已啟用！(無額外加成)";
+showDialogue(`地圖難度投票結束：${msg}。點擊草地佈置防禦塔陣容。`);
+}
+function gameOver(){
+gameState='gameover';closeMenus();
+achievementData.stats.gamesPlayed++;
+if(wave>achievementData.stats.maxWaveReached)achievementData.stats.maxWaveReached=wave;
+saveAchievements();
+let rewardCrystals=selectedGameMode==='endless'?wave*30:wave*10;
+let rewardSP=Math.max(1,Math.floor(wave/2));
+playerAccount.crystals+=rewardCrystals;
+playerAccount.skillPoints+=rewardSP;
+updateLobbyUI();saveAccount();
+document.getElementById('final-wave').innerText=wave;
+document.getElementById('reward-lost-crystals').innerText=rewardCrystals;
+document.getElementById('gameover-screen').classList.remove('hidden');
+}
+function gameVictory(){
+gameState='victory';closeMenus();
+achievementData.stats.gamesPlayed++;achievementData.stats.winsCount++;
+if(wave>achievementData.stats.maxWaveReached)achievementData.stats.maxWaveReached=wave;
+saveAchievements();
+if(selectedGameMode==='challenge'&&wave===20)unlockAchievement('wave_20');
+if(selectedDifficulty==='nightmare')unlockAchievement('nightmare_win');
+if(sessionStats.mapVoteHard)unlockAchievement('hard_map_win');
+if(!sessionStats.hurtBase)unlockAchievement('perfect_win');
+if(gameSpeed>=3)unlockAchievement('speed_3_win');
+let rewardCrystals=0;let commentText="";
+if(selectedDifficulty==='easy'){rewardCrystals=100;commentText="你輕鬆地完成了這次防衛，試著挑戰更具考驗的硬核難度吧。";}
+else if(selectedDifficulty==='hardcore'){rewardCrystals=450;commentText="出色的指揮官，嘗試邁向終極考驗的噩夢難度吧。";}
+else if(selectedDifficulty==='nightmare'){rewardCrystals=1000;commentText="不可思議，在排山倒海的軍團面前，你完成了不可能的傳奇。";}
+playerAccount.crystals+=rewardCrystals;playerAccount.skillPoints+=10;
+updateLobbyUI();saveAccount();
+document.getElementById('reward-win-crystals').innerText=rewardCrystals;
+document.getElementById('victory-comment').innerText=commentText;
+document.getElementById('victory-screen').classList.remove('hidden');
+}
+const btnAutoWave=document.getElementById('btn-autowave');
+const btnNextWave=document.getElementById('btn-nextwave');
+const btnSpeed=document.getElementById('btn-speed');
+function toggleSpeed(){if(gameSpeed===1)gameSpeed=2;else if(gameSpeed===2){if(playerAccount.has_triple_speed)gameSpeed=3;else gameSpeed=1;}else if(gameSpeed===3)gameSpeed=1;updateSpeedButton();}
+function updateSpeedButton(){
+if(gameSpeed===3){btnSpeed.innerText='3 倍速';btnSpeed.className="px-2 py-1 bg-purple-600 hover:bg-purple-500 font-black rounded-md text-[10px] sm:text-xs text-white transition shadow border border-purple-400 animate-pulse";}
+else if(gameSpeed===2){btnSpeed.innerText='2 倍速';btnSpeed.className="px-2 py-1 bg-amber-500 hover:bg-amber-400 font-black rounded-md text-[10px] sm:text-xs text-black transition shadow border border-yellow-300 animate-pulse";}
+else if(gameSpeed>=4){btnSpeed.innerText=`${gameSpeed} 倍速`;btnSpeed.className="px-2 py-1 bg-red-600 hover:bg-red-500 font-black rounded-md text-[10px] sm:text-xs text-white transition shadow border border-red-400 animate-pulse";}
+else{btnSpeed.innerText='1 倍速';btnSpeed.className="px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-[10px] sm:text-xs font-bold text-white transition shadow border border-gray-500";}
+}
+btnSpeed.addEventListener('click',toggleSpeed);
+btnAutoWave.addEventListener('click',()=>{
+autoWave=!autoWave;
+if(autoWave){btnAutoWave.innerText='自動: 開啟';btnAutoWave.className="hidden sm:inline-block px-2 py-1 bg-green-700 hover:bg-green-600 rounded-md text-[10px] sm:text-xs font-bold text-white transition shadow border border-green-500";if(!isWaveActive&&waveTimer<=0)startNextWave();}
+else{btnAutoWave.innerText='自動: 關閉';btnAutoWave.className="hidden sm:inline-block px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-[10px] sm:text-xs font-bold text-white transition shadow border border-gray-500";}
+});
+btnNextWave.addEventListener('click',()=>{if(!isWaveActive)startNextWave();});
+function startNextWave(){
+isWaveActive=true;
+let isBossWave=(selectedGameMode==='challenge'&&wave===20)||(selectedGameMode==='endless'&&wave%10===0);
+if(isBossWave){enemiesToSpawn=1;enemySpawnCount=0;spawnTimer=0;showDialogue(`警告：超級魔王巨獸已降臨，請全力阻擊。`,5000);}
+else{enemiesToSpawn=5+Math.floor(wave*2.5);enemySpawnCount=0;spawnTimer=0;if(wave>1)showDialogue(`第 ${wave} 波攻勢來襲，準備迎戰。`,3000);}
+btnNextWave.classList.add('hidden');
+}
+function togglePause(){
+const pb=document.getElementById('btn-pause');
+if(gameState==='playing'){gameState='paused';pb.innerText='繼續';closeMenus();showDialogue("遊戲已暫停。按下 P 鍵或點擊右上角繼續。",999999);}
+else if(gameState==='paused'){gameState='playing';pb.innerText='暫停';lastTime=performance.now();hideDialogue();}
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&gameState==='playing')togglePause();});
+document.getElementById('btn-pause').addEventListener('click',togglePause);
+function returnToLobby(){
+document.getElementById('gameover-screen').classList.add('hidden');
+document.getElementById('victory-screen').classList.add('hidden');
+document.getElementById('game-screen').classList.add('hidden');
+document.getElementById('vote-screen').classList.add('hidden');
+document.getElementById('home-screen').classList.remove('hidden');
+gameState='home';cancelAnimationFrame(animationId);hideDialogue();closeMenus();
+}
+const uiGold=document.getElementById('ui-gold');
+const uiWave=document.getElementById('ui-wave');
+const uiBaseHp=document.getElementById('ui-base-hp');
+const dialogueContainer=document.getElementById('dialogue-container');
+const dialogueText=document.getElementById('dialogue-text');
+const buildMenu=document.getElementById('build-menu');
+const upgradeMenu=document.getElementById('upgrade-menu');
+let dialogueTimeout;
+function updateUI(){uiGold.innerText=Math.floor(gold);uiWave.innerText=wave;uiBaseHp.innerText=`${Math.max(0,Math.floor(baseHp))}/${MAX_BASE_HP}`;if(activeMenu==='upgrade'&&selectedTower)updateUpgradeMenuUI();}
+function showDialogue(text,duration=4000){dialogueText.innerHTML=text.replace('\n','<br>');dialogueContainer.classList.remove('hidden');clearTimeout(dialogueTimeout);if(duration<999999)dialogueTimeout=setTimeout(hideDialogue,duration);}
+function hideDialogue(){dialogueContainer.classList.add('hidden');}
+function openBuildMenu(x,y){closeMenus();activeMenu='build';menuGridX=x;menuGridY=y;const lp=((x*CELL_SIZE)+(CELL_SIZE/2))/800*100;const tp=(y*CELL_SIZE)/600*100;buildMenu.style.left=`${lp}%`;buildMenu.style.top=`${tp}%`;buildMenu.classList.remove('hidden');}
+function openUpgradeMenu(tower){closeMenus();activeMenu='upgrade';selectedTower=tower;menuGridX=tower.gridX;menuGridY=tower.gridY;const lp=((tower.gridX*CELL_SIZE)+(CELL_SIZE/2))/800*100;const tp=(tower.gridY*CELL_SIZE)/600*100;upgradeMenu.style.left=`${lp}%`;upgradeMenu.style.top=`${tp}%`;upgradeMenu.classList.remove('hidden');updateUpgradeMenuUI();}
+function updateUpgradeMenuUI(){
+if(!selectedTower)return;
+const t=selectedTower;const typeData=TOWER_TYPES[t.type];
+document.getElementById('upgrade-title').innerText=`${typeData.name} Lv.${t.level}`;
+document.getElementById('upg-level').innerText=t.level;
+const upData=getUpgradeData(t.type,t.level);
+if(t.type==='goldmine'){
+const ci=getGoldmineIncome(t.level);const ni=upData.income;
+document.getElementById('upg-dmg').innerText='--';document.getElementById('upg-range').innerText='--';
+document.getElementById('upg-effect-desc').innerText=`每波產金: $${ci} → $${ni}`;
+}else{
+document.getElementById('upg-dmg').innerText=Math.floor(t.damage);
+document.getElementById('upg-range').innerText=t.range;
+const gainText=` (→ 傷害 ${upData.dmg}, 射程 ${upData.range})`;
+document.getElementById('upg-effect-desc').innerText=typeData.desc+gainText;
+}
+const ti=getTowerTotalInvestment(t);const sv=Math.floor(ti*0.5);
+document.getElementById('sell-value').innerText=sv;
+const btn=document.getElementById('btn-do-upgrade');
+const cost=upData.cost;
+btn.textContent=`升級 ($${cost})`;
+btn.disabled=false;
+if(gold<cost){btn.classList.add('bg-gray-500','cursor-not-allowed');btn.classList.remove('bg-blue-600','hover:bg-blue-500');}
+else{btn.classList.remove('bg-gray-500','cursor-not-allowed');btn.classList.add('bg-blue-600','hover:bg-blue-500');}
+}
+function closeMenus(){buildMenu.classList.add('hidden');upgradeMenu.classList.add('hidden');activeMenu=null;selectedTower=null;}
+function tryBuild(typeKey){
+if(activeMenu!=='build'||gameState!=='playing')return;
+const typeData=TOWER_TYPES[typeKey];
+if(typeKey==='goldmine'){if(towers.filter(t=>t.type==='goldmine').length>=4){showDialogue("金庫塔最多 4 個。",2500);return;}}
+if(gold>=typeData.cost){
+gold-=typeData.cost;
+towers.push(new Tower(menuGridX,menuGridY,typeKey));
+mapGrid[menuGridY][menuGridX]=2;
+updateUI();closeMenus();
+sessionStats.towersBuilt++;sessionStats.towerTypesUsed.add(typeKey);
+if(typeKey!=='goldmine')sessionStats.usedNoTower=false;
+if(sessionStats.towersBuilt>=10)unlockAchievement('build_10');
+updateAchieveProgress('all_towers_type',sessionStats.towerTypesUsed.size);
+}else showDialogue(`金幣不足，需要 ${typeData.cost} 金幣。`,2000);
+}
+function tryUpgrade(){
+if(activeMenu!=='upgrade'||!selectedTower||gameState!=='playing')return;
+const t=selectedTower;
+const upData=getUpgradeData(t.type,t.level);
+if(gold>=upData.cost){
+gold-=upData.cost;t.level++;
+if(t.type!=='goldmine'){t.baseDamage=upData.dmg;t.baseRange=upData.range;t.applySkills();}
+updateUI();
+for(let i=0;i<10;i++)particles.push(new Particle(t.x,t.y,'#3b82f6',4));
+showDialogue(`${TOWER_TYPES[t.type].name} 升級至 Lv.${t.level}。`,2000);
+if(t.level>=5)unlockAchievement('max_upgrade');
+const l5g=towers.filter(tw=>tw.type==='goldmine'&&tw.level>=5).length;
+if(l5g>=4)unlockAchievement('gold_mine_max');
+updateUpgradeMenuUI();
+}else showDialogue(`金幣不足，需要 $${upData.cost}。`,2000);
+}
+function trySell(){
+if(activeMenu!=='upgrade'||!selectedTower||gameState!=='playing')return;
+const t=selectedTower;const typeData=TOWER_TYPES[t.type];
+const ti=getTowerTotalInvestment(t);const sv=Math.floor(ti*0.5);
+gold+=sv;const idx=towers.indexOf(t);if(idx>-1)towers.splice(idx,1);
+mapGrid[t.gridY][t.gridX]=0;updateUI();
+for(let i=0;i<15;i++)particles.push(new Particle(t.x,t.y,'#fbbf24',5));
+showDialogue(`出售了 ${typeData.name} (Lv.${t.level})，獲得 $${sv}。`,2000);closeMenus();
+}
+
+// ============================================================
+// 敵人
+// ============================================================
+class Enemy{
+constructor(hpMultiplier,isBoss=false){
+this.pathIndex=0;this.x=pathCoords[0].x*CELL_SIZE+CELL_SIZE/2;this.y=pathCoords[0].y*CELL_SIZE+CELL_SIZE/2;
+this.isBoss=isBoss;
+const st=['air','decelerating','angry','normal','normal'];
+this.type=this.isBoss?'boss':st[Math.floor(Math.random()*st.length)];
+const tn={air:'空氣',decelerating:'減速',angry:'憤怒',boss:'超級Boss'};
+const ti={air:'空',decelerating:'緩',angry:'怒',boss:'王'};
+const ni={air:'空',decelerating:'緩',angry:'怒',normal:'兵'};
+this.typeName=tn[this.type]||'';
+if(this.isBoss){this.baseSpeed=30*diffConfig.speedMult;this.maxHp=(250+(wave*180))*diffConfig.hpMult;this.reward=Math.floor(100*diffConfig.goldRewardMult+wave*10);this.damageToBase=50;this.emoji=ti.boss;}
+else{this.baseSpeed=(this.type==='decelerating'?110:(this.type==='air'?70:60))*diffConfig.speedMult;this.maxHp=(30+(wave*30*hpMultiplier))*diffConfig.hpMult;this.reward=Math.floor((10+Math.floor(wave/2))*diffConfig.goldRewardMult);this.damageToBase=10;
+this.emoji=ni[this.type]||'兵';}
+if(typeof mapVoteSystem!=='undefined'&&mapVoteSystem!==null){const s=mapVoteSystem.calculate_monster_stats(this.maxHp,this.baseSpeed);this.maxHp=s.hp;this.baseSpeed=s.speed;}
+this.speed=this.baseSpeed;this.hp=this.maxHp;this.slowTimer=0;this.burnTimer=0;this.burnDamagePerSecond=0;this.bossAttackCooldown=15;this.frozenTimer=0;
+}
+applySlow(d){if(this.type==='air')return;this.slowTimer=this.isBoss?d*0.7:d;}
+applyBurn(d,dps){this.burnTimer=d;this.burnDamagePerSecond=dps;}
+applyFreeze(d){if(this.type==='air')return;this.frozenTimer=d;}
+update(dt){
+if(this.pathIndex>=pathCoords.length-1)return;
+let baseSpeed=this.baseSpeed;
+if(this.type==='decelerating'){let p=this.pathIndex/pathCoords.length;baseSpeed=Math.max(this.baseSpeed*(1-p*0.75),this.baseSpeed*0.25);}
+else if(this.type==='angry'){let m=1-(Math.max(0,this.hp)/this.maxHp);baseSpeed=this.baseSpeed*(1+m*1.5);}
+else if(this.type==='boss'){
+this.bossAttackCooldown-=dt;
+if(this.bossAttackCooldown<=0){
+this.bossAttackCooldown=15;
+let tt=null;let md=180;
+towers.forEach(t=>{let d=Math.hypot(t.x-this.x,t.y-this.y);if(d<=md&&t.type!=='goldmine'){md=d;tt=t;}});
+if(tt){tt.stunTimer=3.0;showDialogue(`警告：超級Boss發動了咆哮打擊，將附近的防禦塔暈眩了 3 秒。`,3000);for(let i=0;i<12;i++)particles.push(new Particle(tt.x,tt.y,'#fde047',5));}
+}
+}
+if(this.frozenTimer>0){this.frozenTimer-=dt;baseSpeed=0;}
+if(this.slowTimer>0){this.slowTimer-=dt;baseSpeed*=(this.isBoss?0.65:0.5);if(Math.random()<0.15)particles.push(new Particle(this.x,this.y,'#93c5fd',this.isBoss?3:2));}
+if(this.burnTimer>0){this.burnTimer-=dt;this.hp-=this.burnDamagePerSecond*dt;if(Math.random()<0.25)particles.push(new Particle(this.x,this.y,'#f97316',this.isBoss?4:3));}
+this.speed=Math.max(baseSpeed,this.frozenTimer>0?0:1);
+let tp=pathCoords[this.pathIndex+1];let tx=tp.x*CELL_SIZE+CELL_SIZE/2;let ty=tp.y*CELL_SIZE+CELL_SIZE/2;
+let dx=tx-this.x;let dy=ty-this.y;let dist=Math.hypot(dx,dy);
+if(dist<2){this.pathIndex++;this.x=tx;this.y=ty;}
+else{let ma=this.speed*dt;if(ma>dist)ma=dist;this.x+=(dx/dist)*ma;this.y+=(dy/dist)*ma;}
+}
+draw(ctx){
+ctx.textAlign="center";ctx.textBaseline="middle";
+ctx.font=this.isBoss?"bold 28px 'Noto Sans TC',sans-serif":"bold 20px 'Noto Sans TC',sans-serif";
+// 敵人圓底
+ctx.beginPath();
+ctx.arc(this.x,this.y,this.isBoss?20:13,0,Math.PI*2);
+const colorMap={air:'#0ea5e9',decelerating:'#10b981',angry:'#ef4444',boss:'#f59e0b',normal:'#a78bfa'};
+ctx.fillStyle=colorMap[this.type]||'#a78bfa';
+ctx.fill();
+ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=2;ctx.stroke();
+// 中文
+ctx.fillStyle='#fff';
+ctx.fillText(this.emoji,this.x,this.y+1);
+if(this.typeName!==''){
+ctx.fillStyle=this.type==='air'?'#38bdf8':(this.type==='angry'?'#ef4444':(this.type==='decelerating'?'#34d399':'#f59e0b'));
+ctx.font="bold 10px 'Noto Sans TC',sans-serif";
+ctx.fillText(this.typeName,this.x,this.y-(this.isBoss?32:24));
+}
+if(this.slowTimer>0){ctx.fillStyle="rgba(147,197,253,0.4)";ctx.beginPath();ctx.arc(this.x,this.y,this.isBoss?28:16,0,Math.PI*2);ctx.fill();}
+if(this.burnTimer>0){ctx.fillStyle="rgba(249,115,22,0.35)";ctx.beginPath();ctx.arc(this.x,this.y,this.isBoss?26:15,0,Math.PI*2);ctx.fill();}
+if(this.frozenTimer>0){ctx.fillStyle="rgba(165,243,252,0.5)";ctx.beginPath();ctx.arc(this.x,this.y,this.isBoss?30:18,0,Math.PI*2);ctx.fill();}
+let bw=this.isBoss?50:30;let by=this.isBoss?-30:-18;
+ctx.fillStyle="red";ctx.fillRect(this.x-bw/2,this.y+by,bw,4);
+ctx.fillStyle="#22c55e";ctx.fillRect(this.x-bw/2,this.y+by,bw*Math.max(0,this.hp/this.maxHp),4);
+}
+}
+
+// ============================================================
+// 塔
+// ============================================================
+class Tower{
+constructor(x,y,typeKey){
+this.gridX=x;this.gridY=y;this.x=x*CELL_SIZE+CELL_SIZE/2;this.y=y*CELL_SIZE+CELL_SIZE/2;
+this.type=typeKey;const td=TOWER_TYPES[typeKey];
+this.level=1;
+this.baseDamage=td.baseDmg;this.baseRange=td.baseRange;this.baseCooldown=td.baseCooldown;
+this.timer=0;this.target=null;this.stunTimer=0;
+this.shotCounter=0;
+this.applySkills();
+}
+applySkills(){
+const bonus=getTowerSkillBonus(this.type);
+this.skillBonus=bonus;
+let dmgMult=bonus.dmgMult;
+let cdMult=bonus.cdMult;
+if(hasLegendary(this.type)){
+if(this.type==='emperor'){dmgMult*=1.5;cdMult*=0.7;}
+}
+this.damage=this.baseDamage*dmgMult;
+this.range=this.baseRange+bonus.rangeAdd;
+this.cooldown=this.baseCooldown*cdMult;
+}
+update(dt){
+if(this.stunTimer>0){this.stunTimer-=dt;if(this.timer>0)this.timer-=dt;return;}
+if(this.type==='goldmine')return;
+const bonus=this.skillBonus;
+const leg=hasLegendary(this.type);
+if(this.type==='sun'){
+this.timer-=dt;
+if(this.timer<=0){
+this.timer=this.cooldown;
+enemies.forEach(e=>{
+if(e.type!=='air'&&Math.hypot(e.x-this.x,e.y-this.y)<=this.range){
+this.dealDamage(e,this.damage);
+let burnDps=this.damage*0.3*bonus.burnBonus;
+if(leg)burnDps*=2;
+e.applyBurn(1.5,burnDps);
+particles.push(new Particle(e.x,e.y,'#eab308',3));
+}
+});
+}
+return;
+}
+this.timer-=dt;
+if(!this.target||this.target.hp<=0||Math.hypot(this.target.x-this.x,this.target.y-this.y)>this.range){
+this.target=null;
+let tb=null;let cbd=this.range;
+for(let enemy of enemies){
+if(enemy.type==='air'&&this.type!=='hunter'&&this.type!=='emperor')continue;
+if(enemy.isBoss&&Math.hypot(enemy.x-this.x,enemy.y-this.y)<=cbd){cbd=Math.hypot(enemy.x-this.x,enemy.y-this.y);tb=enemy;}
+}
+if(tb)this.target=tb;
+else{let cd=this.range;for(let enemy of enemies){if(enemy.type==='air'&&this.type!=='hunter'&&this.type!=='emperor')continue;let d=Math.hypot(enemy.x-this.x,enemy.y-this.y);if(d<=cd){cd=d;this.target=enemy;}}}
+}
+if(this.target&&this.timer<=0){
+this.shotCounter++;
+let dmg=this.damage;
+let isLegendaryShot=false;
+if(this.type==='star'&&leg&&this.shotCounter%5===0){dmg*=5;isLegendaryShot=true;}
+if(this.type==='hunter'&&leg&&this.shotCounter%5===0){dmg*=5;isLegendaryShot=true;}
+projectiles.push(new Projectile(this.x,this.y,this.target,dmg,this.type,this.skillBonus,this,isLegendaryShot));
+particles.push(new Particle(this.x,this.y,TOWER_TYPES[this.type].projectileColor,5));
+if(isLegendaryShot)for(let i=0;i<8;i++)particles.push(new Particle(this.x,this.y,'#fde047',6));
+this.timer=this.cooldown;
+}
+}
+dealDamage(e,baseDmg,ignoreCrit=false){
+const bonus=this.skillBonus;
+let dmg=baseDmg;
+if(!ignoreCrit&&bonus.critChance>0&&Math.random()<bonus.critChance){dmg*=bonus.critMult;particles.push(new Particle(e.x,e.y,'#fde047',6));}
+if(e.isBoss&&bonus.bossBonus>0)dmg*=(1+bonus.bossBonus);
+if(bonus.executeChance>0&&e.hp<=e.maxHp*0.3&&Math.random()<bonus.executeChance){dmg=e.maxHp*10;particles.push(new Particle(e.x,e.y,'#ef4444',8));}
+e.hp-=dmg;
+return dmg;
+}
+draw(ctx){
+const td=TOWER_TYPES[this.type];
+const softMax=td.upgrades.length+1;
+const leg=hasLegendary(this.type);
+if(leg){
+ctx.beginPath();ctx.arc(this.x,this.y,22+Math.sin(Date.now()/300)*2,0,Math.PI*2);
+const grad=ctx.createRadialGradient(this.x,this.y,5,this.x,this.y,24);
+grad.addColorStop(0,'rgba(251,191,36,0.5)');
+grad.addColorStop(1,'rgba(251,146,60,0)');
+ctx.fillStyle=grad;ctx.fill();
+}
+ctx.beginPath();ctx.arc(this.x,this.y+10,16,0,Math.PI*2);
+if(this.level>=softMax){const gi=Math.min(25,15+(this.level-softMax)*2);ctx.fillStyle="rgba(255,215,0,0.5)";ctx.shadowBlur=gi;ctx.shadowColor="gold";}
+else if(this.level>1){ctx.fillStyle="rgba(192,192,192,0.4)";ctx.shadowBlur=0;}
+else{ctx.fillStyle="rgba(0,0,0,0.2)";ctx.shadowBlur=0;}
+ctx.fill();ctx.shadowBlur=0;
+// 塔底圓
+ctx.beginPath();ctx.arc(this.x,this.y,18,0,Math.PI*2);
+ctx.fillStyle=td.color;ctx.fill();
+ctx.strokeStyle='rgba(255,255,255,0.6)';ctx.lineWidth=2;ctx.stroke();
+// 中文字
+ctx.font="bold 22px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+ctx.fillStyle='#1e293b';
+ctx.fillText(td.emoji,this.x,this.y+1);
+if(this.level>1){ctx.fillStyle=this.level>=softMax?"#fde047":"white";ctx.font="bold 12px 'Noto Sans TC',sans-serif";ctx.fillText(`L${this.level}`,this.x+14,this.y-14);}
+const skillCount=getAllSkillsOfTower(this.type).filter(s=>playerAccount.unlockedSkills[s.id]).length;
+if(skillCount>0){ctx.fillStyle="#a78bfa";ctx.font="bold 9px 'Noto Sans TC',sans-serif";ctx.fillText(`技${skillCount}`,this.x-14,this.y-14);}
+if(leg){ctx.fillStyle="#fbbf24";ctx.font="bold 10px 'Noto Sans TC',sans-serif";ctx.fillText('傳',this.x,this.y-24);}
+if(this.stunTimer>0){ctx.fillStyle="#fde047";ctx.font="bold 10px 'Noto Sans TC',sans-serif";ctx.fillText("暈眩",this.x,this.y-22);}
+}
+}
+
+// ============================================================
+// 投射物
+// ============================================================
+class Projectile{
+constructor(x,y,target,damage,type,skillBonus,sourceTower,isLegendary){
+this.x=x;this.y=y;this.target=target;this.damage=damage;this.type=type;
+this.speed=350;this.active=true;
+this.sourceTower=sourceTower;
+this.isLegendaryShot=isLegendary;
+this.bonus=skillBonus||{dmgMult:1,cdMult:1,rangeAdd:0,critChance:0,critMult:2,burnBonus:1,aoeBonus:0,incomeMult:1,chainBonus:0,slowAdd:0,slowBonus:0,freezeChance:0,pierce:0,executeChance:0,burnStack:1,bossBonus:0,deathExplode:false,noChainFalloff:false};
+}
+update(dt){
+if(!this.active||!this.target||this.target.hp<=0){this.active=false;return;}
+let dx=this.target.x-this.x;let dy=this.target.y-this.y;let dist=Math.hypot(dx,dy);
+if(dist<10){this.hit();this.active=false;return;}
+let ma=this.speed*dt;
+this.x+=(dx/dist)*ma;this.y+=(dy/dist)*ma;
+}
+hit(){
+const target=this.target;
+const bonus=this.bonus;
+const leg=hasLegendary(this.type);
+let dmg=this.damage;
+if(bonus.critChance>0&&Math.random()<bonus.critChance){dmg*=bonus.critMult;particles.push(new Particle(target.x,target.y,'#fde047',6));}
+if(target.isBoss&&bonus.bossBonus>0)dmg*=(1+bonus.bossBonus);
+if(bonus.executeChance>0&&target.hp<=target.maxHp*0.3&&Math.random()<bonus.executeChance){dmg=target.maxHp*10;particles.push(new Particle(target.x,target.y,'#ef4444',8));}
+if(this.type==='ice'&&leg&&(target.slowTimer>0||target.frozenTimer>0)){dmg*=1.5;}
+
+if(this.type==='star'){target.hp-=dmg;const n=this.isLegendaryShot?15:4;for(let i=0;i<n;i++)particles.push(new Particle(this.x,this.y,this.isLegendaryShot?'#fde047':'#fbbf24',this.isLegendaryShot?5:3));}
+else if(this.type==='fire'){
+let aoeRange=70+bonus.aoeBonus;
+if(leg)aoeRange+=30;
+for(let i=0;i<15;i++){particles.push(new Particle(this.x,this.y,'#ef4444',4));particles.push(new Particle(this.x,this.y,'#f97316',3));}
+enemies.forEach(e=>{if(e.type!=='air'&&Math.hypot(e.x-this.x,e.y-this.y)<=aoeRange){e.hp-=dmg;e.applyBurn(3.0,dmg*0.35*bonus.burnBonus);}});
+if(leg)enemies.forEach(e=>{if(e.type!=='air'&&Math.hypot(e.x-this.x,e.y-this.y)<=aoeRange){e.applyBurn(6.0,dmg*0.15);}});
+}else if(this.type==='ice'){
+let aoeRange=90+bonus.aoeBonus;
+for(let i=0;i<10;i++){particles.push(new Particle(this.x,this.y,'#60a5fa',3));particles.push(new Particle(this.x,this.y,'#93c5fd',2));}
+enemies.forEach(e=>{if(e.type!=='air'&&Math.hypot(e.x-this.x,e.y-this.y)<=aoeRange){e.hp-=dmg;e.applySlow(2.5+bonus.slowAdd+bonus.slowBonus);if(bonus.freezeChance>0&&Math.random()<bonus.freezeChance)e.applyFreeze(1.0);}});
+}else if(this.type==='lightning'){
+let maxChain=leg?9999:(2+bonus.chainBonus);
+let hitList=[target];target.hp-=dmg;
+for(let i=0;i<6;i++)particles.push(new Particle(target.x,target.y,'#a855f7',3));
+let current=target;
+const falloff=(bonus.noChainFalloff||leg)?1.0:0.85;
+for(let c=1;current&&c<maxChain;c++){
+let nt=null;let nd=leg?150:110;
+enemies.forEach(e=>{if(e.type!=='air'&&!hitList.includes(e)&&Math.hypot(e.x-current.x,e.y-current.y)<nd){nd=Math.hypot(e.x-current.x,e.y-current.y);nt=e;}});
+if(nt){nt.hp-=dmg*falloff;for(let i=0;i<4;i++)particles.push(new Particle(nt.x,nt.y,'#a855f7',3));hitList.push(nt);current=nt;}else break;
+}
+}else if(this.type==='blackhole'){
+let aoeRange=120+bonus.aoeBonus;
+target.hp-=dmg;
+for(let i=0;i<8;i++)particles.push(new Particle(this.x,this.y,'#6b21a8',4));
+enemies.forEach(e=>{let d=Math.hypot(e.x-this.x,e.y-this.y);if(e.type!=='air'&&d<=aoeRange&&e!==target){e.x+=(this.x-e.x)/d*(aoeRange-d)*0.65;e.y+=(this.y-e.y)/d*(aoeRange-d)*0.65;e.hp-=dmg*0.6;}});
+if(leg&&this.sourceTower&&target.hp<=0&&Math.random()<0.4){this.sourceTower.timer=0;for(let i=0;i<12;i++)particles.push(new Particle(this.sourceTower.x,this.sourceTower.y,'#c084fc',5));}
+}else if(this.type==='hunter'){
+if(this.isLegendaryShot){target.hp-=dmg;for(let i=0;i<20;i++)particles.push(new Particle(this.x,this.y,'#dc2626',6));}
+else if(target.hp>=target.maxHp*0.7){target.hp-=dmg*2.5;for(let i=0;i<8;i++)particles.push(new Particle(this.x,this.y,'#f97316',5));}
+else{target.hp-=dmg;for(let i=0;i<4;i++)particles.push(new Particle(this.x,this.y,'#fed7aa',3));}
+}else if(this.type==='toxic'){
+target.hp-=dmg;
+let poisonDps=dmg*0.5*bonus.burnBonus;
+if(leg)poisonDps*=1.5;
+target.applyBurn(4.0,poisonDps);
+for(let i=0;i<6;i++)particles.push(new Particle(this.x,this.y,'#22c55e',3));
+if(leg)enemies.forEach(e=>{if(e.type!=='air'&&e!==target&&Math.hypot(e.x-target.x,e.y-target.y)<=100){if(!e.burnTimer||e.burnTimer<1.0)e.applyBurn(2.5,poisonDps*0.6);}});
+let aoeRange=0+bonus.aoeBonus;
+if(aoeRange>0)enemies.forEach(e=>{if(e.type!=='air'&&e!==target&&Math.hypot(e.x-target.x,e.y-target.y)<=aoeRange)e.applyBurn(2.0,dmg*0.3*bonus.burnBonus);});
+}else if(this.type==='emperor'){
+target.hp-=dmg;
+target.applySlow(2.0+bonus.slowAdd);
+for(let i=0;i<10;i++)particles.push(new Particle(this.x,this.y,'#fde047',4));
+}
+}
+draw(ctx){
+const isLeg=this.isLegendaryShot;
+ctx.beginPath();ctx.arc(this.x,this.y,isLeg?8:(this.type==='fire'||this.type==='blackhole'?6:4),0,Math.PI*2);
+ctx.fillStyle=isLeg?'#fde047':TOWER_TYPES[this.type].projectileColor;
+ctx.fill();ctx.shadowBlur=isLeg?20:10;ctx.shadowColor=ctx.fillStyle;ctx.fill();ctx.shadowBlur=0;
+}
+}
+
+class Particle{
+constructor(x,y,color,size){this.x=x;this.y=y;this.color=color;this.size=size;this.life=1.0;this.vx=(Math.random()-0.5)*120;this.vy=(Math.random()-0.5)*120;}
+update(dt){this.x+=this.vx*dt;this.y+=this.vy*dt;this.life-=dt*3.5;}
+draw(ctx){ctx.globalAlpha=Math.max(0,this.life);ctx.beginPath();ctx.arc(this.x,this.y,this.size,0,Math.PI*2);ctx.fillStyle=this.color;ctx.fill();ctx.globalAlpha=1.0;}
+}
+
+function handleInteraction(gX,gY){
+if(gX<0||gX>=COLS||gY<0||gY>=ROWS||gameState!=='playing')return;
+const ts=mapGrid[gY][gX];
+if(ts===0){if(activeMenu==='build'&&menuGridX===gX&&menuGridY===gY)closeMenus();else openBuildMenu(gX,gY);}
+else if(ts===2){const ct=towers.find(t=>t.gridX===gX&&t.gridY===gY);if(ct){if(activeMenu==='upgrade'&&selectedTower===ct)closeMenus();else openUpgradeMenu(ct);}}
+else closeMenus();
+}
+wrapper.addEventListener('click',e=>{
+if(e.target===wrapper&&gameState==='playing'){closeMenus();return;}
+const bo=e.target.closest('.build-opt');if(bo){e.preventDefault();e.stopPropagation();tryBuild(bo.getAttribute('data-type'));return;}
+if(e.target.closest('#btn-cancel-build')){e.preventDefault();e.stopPropagation();closeMenus();return;}
+if(e.target.closest('#btn-do-upgrade')){e.preventDefault();e.stopPropagation();tryUpgrade();return;}
+if(e.target.closest('#btn-do-sell')){e.preventDefault();e.stopPropagation();trySell();return;}
+if(e.target.closest('#btn-cancel-upgrade')){e.preventDefault();e.stopPropagation();closeMenus();return;}
+},true);
+function handleCanvasInput(clientX,clientY){
+if(gameState!=='playing')return;
+const rect=canvas.getBoundingClientRect();
+const sx=canvas.width/rect.width;const sy=canvas.height/rect.height;
+const mx=(clientX-rect.left)*sx;const my=(clientY-rect.top)*sy;
+const gX=Math.floor(mx/CELL_SIZE);const gY=Math.floor(my/CELL_SIZE);
+cursorX=gX;cursorY=gY;
+handleInteraction(gX,gY);
+}
+canvas.addEventListener('mousedown',e=>handleCanvasInput(e.clientX,e.clientY));
+canvas.addEventListener('touchstart',e=>{e.preventDefault();handleCanvasInput(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+canvas.addEventListener('mousemove',e=>{
+if(gameState!=='playing')return;
+const rect=canvas.getBoundingClientRect();
+cursorX=Math.floor(((e.clientX-rect.left)*(canvas.width/rect.width))/CELL_SIZE);
+cursorY=Math.floor(((e.clientY-rect.top)*(canvas.height/rect.height))/CELL_SIZE);
+});
+window.addEventListener('keydown',e=>{
+if(gameState!=='playing'&&gameState!=='paused')return;
+if(e.key==='p'||e.key==='P'){togglePause();return;}
+if(e.key==='f'||e.key==='F'){toggleSpeed();return;}
+if(gameState==='paused')return;
+if(activeMenu==='build'){
+const list=playerAccount.equippedTowers;
+if(e.key==='1'&&list[0])tryBuild(list[0]);if(e.key==='2'&&list[1])tryBuild(list[1]);if(e.key==='3'&&list[2])tryBuild(list[2]);if(e.key==='4'&&list[3])tryBuild(list[3]);if(e.key==='5'&&list[4])tryBuild(list[4]);
+if(e.key==='Escape')closeMenus();
+}else if(activeMenu==='upgrade'){
+if(e.key==='Enter'||e.key===' '){tryUpgrade();e.preventDefault();}
+if(e.key==='x'||e.key==='X'||e.key==='Backspace'){trySell();e.preventDefault();}
+if(e.key==='Escape')closeMenus();
+}
+});
+document.getElementById('btn-start').addEventListener('click',startGame);
+document.getElementById('btn-home').addEventListener('click',returnToLobby);
+document.getElementById('btn-home-victory').addEventListener('click',returnToLobby);
+
+function update(dt){
+let edt=dt*gameSpeed;
+if(devOverrides.infiniteGold){gold+=1000*edt;updateUI();}
+if(!isWaveActive){
+waveTimer-=edt;
+if(waveTimer<=0){if(autoWave)startNextWave();else{waveTimer=0;btnNextWave.classList.remove('hidden');btnNextWave.innerText=`下一波`;}}
+else{btnNextWave.classList.remove('hidden');btnNextWave.innerText=`下一波 (${Math.ceil(waveTimer)}s)`;}
+}else{
+btnNextWave.classList.add('hidden');
+if(enemySpawnCount<enemiesToSpawn){
+spawnTimer-=edt;
+if(spawnTimer<=0){
+let isBossWave=(selectedGameMode==='challenge'&&wave===20)||(selectedGameMode==='endless'&&wave%10===0);
+if(isBossWave){enemies.push(new Enemy(1,true));enemySpawnCount=enemiesToSpawn;}
+else{enemies.push(new Enemy((Math.random()<0.2&&wave>2)?1.5:1,false));enemySpawnCount++;spawnTimer=Math.max(0.4,1.2-(wave*0.05));}
+}
+}else if(enemies.length===0){
+if(selectedGameMode==='challenge'&&wave===20){gameVictory();return;}
+isWaveActive=false;wave++;waveTimer=4;gold+=30+wave*5;
+playerAccount.skillPoints+=1;
+let gmBonus=0;towers.forEach(t=>{if(t.type==='goldmine')gmBonus+=getGoldmineIncome(t.level);});
+if(hasLegendary('goldmine')){gmBonus+=200;}
+if(gmBonus>0){gold+=gmBonus;showDialogue(`金庫結算！額外 $${gmBonus} 收益。技能點 +1`,3500);}
+else showDialogue(`成功擊退！技能點 +1`,3000);
+updateUI();saveAccount();
+if(wave===10)unlockAchievement('wave_10');
+if(selectedGameMode==='endless'&&wave>=30)unlockAchievement('endless_30');
+if(wave===6&&sessionStats.usedNoTower)unlockAchievement('no_tower_wave5');
+}
+}
+if(devOverrides.oneHitKill)towers.forEach(t=>{t.damage=999999;});
+towers.forEach(t=>t.update(edt));
+projectiles.forEach(p=>p.update(edt));
+particles.forEach(p=>p.update(edt));
+for(let i=enemies.length-1;i>=0;i--){
+let e=enemies[i];e.update(edt);
+if(e.pathIndex>=pathCoords.length-1){
+baseHp-=e.damageToBase;
+sessionStats.hurtBase=true;
+if(baseHp<=0){baseHp=0;updateUI();gameOver();return;}
+else{showDialogue(`基地遭受撞擊，HP -${e.damageToBase}`,2000);updateUI();for(let j=0;j<10;j++)particles.push(new Particle(e.x,e.y,'#ef4444',4));enemies.splice(i,1);continue;}
+}
+if(e.hp<=0){
+gold+=e.reward;updateUI();
+sessionStats.kills++;
+achievementData.stats.totalKills++;
+if(e.type==='air'){sessionStats.airKills++;achievementData.stats.airKills++;updateAchieveProgress('air_slayer',achievementData.stats.airKills,true);}
+if(e.isBoss){unlockAchievement('boss_slayer');playerAccount.skillPoints+=5;saveAccount();}
+if(achievementData.stats.totalKills===1)unlockAchievement('first_blood');
+updateAchieveProgress('kill_500',achievementData.stats.totalKills,true);
+towers.forEach(t=>{const bonus=t.skillBonus;if(bonus&&bonus.deathExplode&&Math.hypot(e.x-t.x,e.y-t.y)<100){const exDmg=t.damage*1.5;enemies.forEach(o=>{if(o!==e&&Math.hypot(o.x-e.x,o.y-e.y)<=80)o.hp-=exDmg*0.5;});for(let j=0;j<20;j++)particles.push(new Particle(e.x,e.y,'#f97316',5));}});
+for(let j=0;j<(e.isBoss?25:5);j++)particles.push(new Particle(e.x,e.y,e.isBoss?'#f59e0b':'white',e.isBoss?6:4));
+enemies.splice(i,1);
+}
+}
+projectiles=projectiles.filter(p=>p.active);
+particles=particles.filter(p=>p.life>0);
+}
+
+function draw(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+for(let y=0;y<ROWS;y++){
+for(let x=0;x<COLS;x++){
+if(mapGrid[y][x]===1||mapGrid[y][x]===3){ctx.fillStyle="#d1d5db";ctx.fillRect(x*CELL_SIZE,y*CELL_SIZE,CELL_SIZE,CELL_SIZE);ctx.strokeStyle="#9ca3af";ctx.strokeRect(x*CELL_SIZE,y*CELL_SIZE,CELL_SIZE,CELL_SIZE);}
+else{ctx.strokeStyle="rgba(255,255,255,0.1)";ctx.strokeRect(x*CELL_SIZE,y*CELL_SIZE,CELL_SIZE,CELL_SIZE);}
+}
+}
+// 基地
+ctx.beginPath();ctx.arc(BASE_POS.x*CELL_SIZE+CELL_SIZE/2,BASE_POS.y*CELL_SIZE+CELL_SIZE/2,18,0,Math.PI*2);
+ctx.fillStyle='#dc2626';ctx.fill();
+ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+ctx.font="bold 20px 'Noto Sans TC',sans-serif";ctx.textAlign="center";ctx.textBaseline="middle";
+ctx.fillStyle='#fff';ctx.fillText('堡',BASE_POS.x*CELL_SIZE+CELL_SIZE/2,BASE_POS.y*CELL_SIZE+CELL_SIZE/2+1);
+towers.forEach(t=>t.draw(ctx));
+enemies.forEach(e=>e.draw(ctx));
+projectiles.forEach(p=>p.draw(ctx));
+particles.forEach(p=>p.draw(ctx));
+ctx.strokeStyle="white";ctx.lineWidth=2;ctx.strokeRect(cursorX*CELL_SIZE,cursorY*CELL_SIZE,CELL_SIZE,CELL_SIZE);
+if(activeMenu==='upgrade'&&selectedTower){if(selectedTower.type!=='goldmine')drawRange(selectedTower.x,selectedTower.y,selectedTower.range,TOWER_TYPES[selectedTower.type].color);}
+else if(mapGrid[cursorY]&&mapGrid[cursorY][cursorX]===0&&!activeMenu){drawRange(cursorX*CELL_SIZE+CELL_SIZE/2,cursorY*CELL_SIZE+CELL_SIZE/2,TOWER_TYPES.star.baseRange,"rgba(255,255,255,0.3)");}
+else if(mapGrid[cursorY]&&mapGrid[cursorY][cursorX]===2&&!activeMenu){const ht=towers.find(t=>t.gridX===cursorX&&t.gridY===cursorY);if(ht&&ht.type!=='goldmine')drawRange(ht.x,ht.y,ht.range,TOWER_TYPES[ht.type].color);}
+}
+function drawRange(x,y,radius,colorStr){
+ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);
+ctx.fillStyle="rgba(0,0,0,0.1)";ctx.fill();
+ctx.strokeStyle=colorStr||"rgba(255,255,255,0.5)";
+ctx.lineWidth=1;ctx.setLineDash([5,5]);ctx.stroke();ctx.setLineDash([]);
+}
+function drawPauseOverlay(){
+ctx.fillStyle="rgba(0,0,0,0.5)";ctx.fillRect(0,0,canvas.width,canvas.height);
+ctx.font="bold 48px sans-serif";ctx.fillStyle="white";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("遊戲暫停",canvas.width/2,canvas.height/2-20);
+ctx.font="20px sans-serif";ctx.fillStyle="#cbd5e1";ctx.fillText("按 P 鍵或點擊繼續",canvas.width/2,canvas.height/2+30);
+}
+function gameLoop(ts){
+if(!lastTime)lastTime=ts;
+let dt=(ts-lastTime)/1000;
+if(dt>0.1)dt=0.1;
+lastTime=ts;
+if(gameState==='playing'){update(dt);if(gameState==='playing')draw();}
+else if(gameState==='paused'||gameState==='voting'){draw();if(gameState==='paused')drawPauseOverlay();}
+if(gameState==='playing'||gameState==='paused'||gameState==='voting')animationId=requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// 開發者模式
+// ============================================================
+const DEV_MODE_KEY='allstar_td_devmode_v1';
+let devModeActive=false;
+const devOverrides={crystals:null,skillPoints:null,startGold:null,baseHp:null,hpMult:null,speedMult:null,goldRewardMult:null,gameSpeed:null,tripleSpeed:false,allTowers:false,infiniteGold:false,oneHitKill:false};
+function loadDevMode(){try{const r=localStorage.getItem(DEV_MODE_KEY);if(r){const s=JSON.parse(r);Object.assign(devOverrides,s.overrides||{});devModeActive=!!s.active;}}catch(e){}}
+function saveDevMode(){try{localStorage.setItem(DEV_MODE_KEY,JSON.stringify({active:devModeActive,overrides:devOverrides}));}catch(e){}}
+function handleDevCommand(cmd){const n=cmd.trim().replace(/\s+/g,' ');if(n==='git pull origin hack'){devModeActive=true;saveDevMode();showDevToast('DEV MODE 已解鎖');openDevPanel();return true;}return false;}
+function showDevToast(msg){const t=document.createElement('div');t.className='fixed top-4 left-1/2 -translate-x-1/2 bg-green-900 border border-green-400 text-green-200 font-mono text-xs px-4 py-2 rounded-lg shadow-2xl z-[80] animate-pulse';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}
+function openDevPanel(){if(!devModeActive){showDevToast('權限不足');return;}syncPanelFromOverrides();document.getElementById('dev-panel').classList.remove('hidden');}
+function closeDevPanel(){document.getElementById('dev-panel').classList.add('hidden');}
+function syncPanelFromOverrides(){
+document.getElementById('dev-crystals').value=devOverrides.crystals??playerAccount.crystals;
+document.getElementById('dev-sp').value=devOverrides.skillPoints??playerAccount.skillPoints;
+document.getElementById('dev-gold').value=devOverrides.startGold??'';
+document.getElementById('dev-basehp').value=devOverrides.baseHp??MAX_BASE_HP;
+document.getElementById('dev-hpmult').value=devOverrides.hpMult??'';
+document.getElementById('dev-speedmult').value=devOverrides.speedMult??'';
+document.getElementById('dev-goldmult').value=devOverrides.goldRewardMult??'';
+document.getElementById('dev-gamespeed').value=devOverrides.gameSpeed??'';
+document.getElementById('dev-triplespeed').checked=devOverrides.tripleSpeed||playerAccount.has_triple_speed;
+document.getElementById('dev-alltowers').checked=devOverrides.allTowers;
+document.getElementById('dev-infgold').checked=devOverrides.infiniteGold;
+document.getElementById('dev-onehit').checked=devOverrides.oneHitKill;
+document.getElementById('dev-allachieve').checked=false;
+document.getElementById('dev-allskills').checked=false;
+document.getElementById('dev-alllegendary').checked=false;
+}
+function readNum(id){const v=document.getElementById(id).value;if(v===''||v===null)return null;const n=Number(v);return isNaN(n)?null:n;}
+function applyDevPanel(){
+devOverrides.crystals=readNum('dev-crystals');
+devOverrides.skillPoints=readNum('dev-sp');
+devOverrides.startGold=readNum('dev-gold');
+devOverrides.baseHp=readNum('dev-basehp');
+devOverrides.hpMult=readNum('dev-hpmult');
+devOverrides.speedMult=readNum('dev-speedmult');
+devOverrides.goldRewardMult=readNum('dev-goldmult');
+devOverrides.gameSpeed=readNum('dev-gamespeed');
+devOverrides.tripleSpeed=document.getElementById('dev-triplespeed').checked;
+devOverrides.allTowers=document.getElementById('dev-alltowers').checked;
+devOverrides.infiniteGold=document.getElementById('dev-infgold').checked;
+devOverrides.oneHitKill=document.getElementById('dev-onehit').checked;
+const unlockAllAchieve=document.getElementById('dev-allachieve').checked;
+const unlockAllSkill=document.getElementById('dev-allskills').checked;
+const unlockAllLeg=document.getElementById('dev-alllegendary').checked;
+if(devOverrides.crystals!==null)playerAccount.crystals=devOverrides.crystals;
+if(devOverrides.skillPoints!==null)playerAccount.skillPoints=devOverrides.skillPoints;
+if(devOverrides.tripleSpeed)playerAccount.has_triple_speed=true;
+if(devOverrides.allTowers)playerAccount.unlockedTowers=Object.keys(TOWER_TYPES);
+if(unlockAllAchieve){let tr=0;Object.keys(ACHIEVEMENTS).forEach(id=>{if(!isAchieveUnlocked(id)){achievementData.unlocked[id]=Date.now();achievementData.progress[id]=ACHIEVEMENTS[id].goal;tr+=ACHIEVEMENTS[id].reward;}});playerAccount.crystals+=tr;saveAchievements();showDevToast(`已解鎖全部成就 (+${tr} 星碎)`);renderAchievementsUI();}
+if(unlockAllSkill){let c=0;for(const t in SKILL_TREES)for(const b of SKILL_TREES[t].branches)for(const s of b.skills){if(!playerAccount.unlockedSkills[s.id]){playerAccount.unlockedSkills[s.id]=true;c++;}}towers.forEach(t=>t.applySkills());showDevToast(`已解鎖 ${c} 個技能`);}
+if(unlockAllLeg){let c=0;for(const t in LEGENDARY_SKILLS){const leg=LEGENDARY_SKILLS[t];if(!playerAccount.unlockedSkills[leg.id]){playerAccount.unlockedSkills[leg.id]=true;c++;}}towers.forEach(t=>t.applySkills());if(c>0)checkAllLegendaryAchievement();showDevToast(`已解鎖 ${c} 個傳奇技能`);}
+saveDevMode();saveAccount();updateLobbyUI();closeDevPanel();showDevToast('開發者數值已套用');
+}
+function resetDevDefaults(){Object.keys(devOverrides).forEach(k=>{devOverrides[k]=(typeof devOverrides[k]==='boolean')?false:null;});saveDevMode();syncPanelFromOverrides();showDevToast('已恢復預設');}
+function initDevTerminal(){
+const input=document.getElementById('dev-input');
+const btn=document.getElementById('dev-run');
+if(!input||!btn)return;
+const run=()=>{
+const cmd=input.value;
+if(handleDevCommand(cmd)){input.value='';input.placeholder='hack 模式已啟用';}
+else{showDevToast('未知指令：'+(cmd.trim()||'(空)'));input.value='';}
+};
+btn.addEventListener('click',run);
+input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();run();}});
+}
+
+loadAccount();
+loadAchievements();
+loadDevMode();
+updateLobbyUI();
+renderAchievementsUI();
+initDevTerminal();
+</script>
 </body>
 </html>
