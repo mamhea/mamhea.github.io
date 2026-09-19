@@ -8,8 +8,20 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
 body{font-family:'Noto Sans TC',sans-serif;background-color:#0f172a;color:white;user-select:none;overflow:hidden;touch-action:none;}
-.game-wrapper{position:relative;width:100%;max-width:800px;max-height:72vh;aspect-ratio:4/3;margin:0 auto;}
-canvas{box-shadow:0 10px 25px rgba(0,0,0,0.5);border-radius:0.5rem;width:100%;height:100%;object-fit:contain;background-color:#1e293b;}
+.game-wrapper{
+    position: relative;
+    width: min(100%, 800px, calc(72vh * 4 / 3));
+    aspect-ratio: 4 / 3;
+    margin: 0 auto;
+}
+canvas{
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    border-radius: 0.5rem;
+    width: 100%;
+    height: 100%;
+    display: block;
+    background-color: #1e293b;
+}
 .dialogue-box{background:rgba(15,23,42,0.95);border:2px solid #3b82f6;border-radius:8px;padding:1rem;text-shadow:1px 1px 2px black;}
 ::-webkit-scrollbar{display:none;}
 #build-menu,#upgrade-menu{position:absolute;transform:translate(-50%,-100%);margin-top:-10px;pointer-events:auto;}
@@ -1335,23 +1347,57 @@ if(e.target.closest('#btn-do-upgrade')){e.preventDefault();e.stopPropagation();t
 if(e.target.closest('#btn-do-sell')){e.preventDefault();e.stopPropagation();trySell();return;}
 if(e.target.closest('#btn-cancel-upgrade')){e.preventDefault();e.stopPropagation();closeMenus();return;}
 },true);
-function handleCanvasInput(clientX,clientY){
-if(gameState!=='playing')return;
-const rect=canvas.getBoundingClientRect();
-const sx=canvas.width/rect.width;const sy=canvas.height/rect.height;
-const mx=(clientX-rect.left)*sx;const my=(clientY-rect.top)*sy;
-const gX=Math.floor(mx/CELL_SIZE);const gY=Math.floor(my/CELL_SIZE);
-cursorX=gX;cursorY=gY;
-handleInteraction(gX,gY);
+// ============================================================
+// 滑鼠 / 觸控座標換算（統一入口，避免偏移）
+// ============================================================
+function clientToGrid(clientX, clientY){
+    const rect = canvas.getBoundingClientRect();
+    // canvas 內部邏輯尺寸為 800x600，CSS 尺寸為 rect.width x rect.height
+    // 只要 wrapper 保持 4:3，這裡的等比換算即精準
+    const relX = clientX - rect.left;
+    const relY = clientY - rect.top;
+    const gX = Math.floor((relX / rect.width) * COLS);
+    const gY = Math.floor((relY / rect.height) * ROWS);
+    return { gX, gY };
 }
-canvas.addEventListener('mousedown',e=>handleCanvasInput(e.clientX,e.clientY));
-canvas.addEventListener('touchstart',e=>{e.preventDefault();handleCanvasInput(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
-canvas.addEventListener('mousemove',e=>{
-if(gameState!=='playing')return;
-const rect=canvas.getBoundingClientRect();
-cursorX=Math.floor(((e.clientX-rect.left)*(canvas.width/rect.width))/CELL_SIZE);
-cursorY=Math.floor(((e.clientY-rect.top)*(canvas.height/rect.height))/CELL_SIZE);
+
+function clampCursor(gX, gY){
+    cursorX = Math.max(0, Math.min(COLS - 1, gX));
+    cursorY = Math.max(0, Math.min(ROWS - 1, gY));
+}
+
+function handleCanvasInput(clientX, clientY){
+    if(gameState !== 'playing') return;
+    const { gX, gY } = clientToGrid(clientX, clientY);
+    clampCursor(gX, gY);
+    handleInteraction(gX, gY);
+}
+
+// 滑鼠點擊
+canvas.addEventListener('mousedown', e => {
+    handleCanvasInput(e.clientX, e.clientY);
 });
+
+// 觸控點擊
+canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    handleCanvasInput(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+
+// 滑鼠移動：更新游標框（不觸發建造/升級選單）
+canvas.addEventListener('mousemove', e => {
+    if(gameState !== 'playing') return;
+    const { gX, gY } = clientToGrid(e.clientX, e.clientY);
+    clampCursor(gX, gY);
+});
+
+// 觸控移動：更新游標框
+canvas.addEventListener('touchmove', e => {
+    if(gameState !== 'playing') return;
+    if(e.touches.length === 0) return;
+    const { gX, gY } = clientToGrid(e.touches[0].clientX, e.touches[0].clientY);
+    clampCursor(gX, gY);
+}, { passive: true });
 window.addEventListener('keydown',e=>{
 if(gameState!=='playing'&&gameState!=='paused')return;
 if(e.key==='p'||e.key==='P'){togglePause();return;}
